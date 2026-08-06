@@ -4,7 +4,7 @@ import { useGameStore } from '../../store/useGameStore';
 import { WORDS, type Word } from '../../data/words';
 import { Card } from '../ui/Card';
 import { Button, cn } from '../ui/Button';
-import { ArrowLeft, Flame, Star, ListChecks } from 'lucide-react';
+import { ArrowLeft, Flame, Star, ListChecks, Info } from 'lucide-react';
 
 interface GameScreenProps {
   mode: string;
@@ -223,7 +223,17 @@ export function GameScreen({ mode, onQuit, onEndGame }: GameScreenProps) {
                 <Card className="absolute inset-0 backface-hidden flex flex-col items-center justify-center p-8">
                   {/* Mastery Ring for Flashcard */}
                   <div className="absolute top-4 right-4 flex items-center gap-2">
-                    <span className="text-[10px] text-slate-500 font-bold uppercase">Mastery</span>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        store.setSelectedWordForDetail(q.word);
+                      }}
+                      className="p-1.5 rounded-full hover:bg-slate-800 text-slate-400 hover:text-slate-200 transition-colors"
+                      title="View Details"
+                    >
+                      <Info className="w-5 h-5" />
+                    </button>
+                    <span className="text-[10px] text-slate-500 font-bold uppercase ml-2">Mastery</span>
                     <div className="relative w-8 h-8 flex items-center justify-center">
                       <svg className="absolute inset-0 w-full h-full -rotate-90">
                         <circle cx="16" cy="16" r="14" stroke="currentColor" strokeWidth="3" fill="transparent" className="text-slate-800" />
@@ -265,7 +275,17 @@ export function GameScreen({ mode, onQuit, onEndGame }: GameScreenProps) {
                 {(mode === 'quiz' || mode === 'speed') && (
                   <>
                     <div className="absolute top-4 right-4 flex items-center gap-2">
-                      <span className="text-[10px] text-slate-500 font-bold uppercase">Mastery</span>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          store.setSelectedWordForDetail(q.word);
+                        }}
+                        className="p-1.5 rounded-full hover:bg-slate-800 text-slate-400 hover:text-slate-200 transition-colors"
+                        title="View Details"
+                      >
+                        <Info className="w-5 h-5" />
+                      </button>
+                      <span className="text-[10px] text-slate-500 font-bold uppercase ml-2">Mastery</span>
                       <div className="relative w-8 h-8 flex items-center justify-center">
                         <svg className="absolute inset-0 w-full h-full -rotate-90">
                           <circle cx="16" cy="16" r="14" stroke="currentColor" strokeWidth="3" fill="transparent" className="text-slate-800" />

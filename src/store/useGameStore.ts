@@ -6,6 +6,7 @@ export interface WordMastery {
   seen: number;
   lastReviewed?: number; // timestamp
   interval?: number; // days
+  history?: boolean[]; // last 5 attempts
 }
 
 interface GameState {
@@ -18,6 +19,7 @@ interface GameState {
   wordMastery: Record<string, WordMastery>;
   achievements: string[];
   showConfettiFor: string | null;
+  selectedWordForDetail: string | null;
   
   // Actions
   addXP: (amount: number) => void;
@@ -27,6 +29,7 @@ interface GameState {
   unlockAchievement: (id: string) => void;
   checkAchievements: () => string[]; // returns newly unlocked achievement IDs
   clearConfetti: () => void;
+  setSelectedWordForDetail: (word: string | null) => void;
 }
 
 const calculateNextInterval = (currentInterval: number = 0, isCorrect: boolean) => {
@@ -50,6 +53,7 @@ export const useGameStore = create<GameState>()(
       wordMastery: {},
       achievements: [],
       showConfettiFor: null,
+      selectedWordForDetail: null,
 
       addXP: (amount) => set((state) => {
         const newXp = state.xp + amount;
@@ -77,6 +81,9 @@ export const useGameStore = create<GameState>()(
         const newSeen = currentMastery.seen + 1;
         const newInterval = calculateNextInterval(currentMastery.interval, isCorrect);
         
+        const currentHistory = currentMastery.history || [];
+        const newHistory = [...currentHistory, isCorrect].slice(-5);
+        
         // Trigger confetti if this is the 5th correct answer
         let confettiWord = state.showConfettiFor;
         if (isCorrect && newCorrect === 5) {
@@ -94,12 +101,15 @@ export const useGameStore = create<GameState>()(
               correct: newCorrect,
               lastReviewed: Date.now(),
               interval: newInterval,
+              history: newHistory,
             }
           }
         };
       }),
       
       clearConfetti: () => set({ showConfettiFor: null }),
+      
+      setSelectedWordForDetail: (word) => set({ selectedWordForDetail: word }),
       
       unlockAchievement: (id) => set((state) => {
         if (!state.achievements.includes(id)) {

@@ -3,7 +3,7 @@ import { useGameStore } from '../../store/useGameStore';
 import { WORDS } from '../../data/words';
 import { Card } from '../ui/Card';
 import { Button, cn } from '../ui/Button';
-import { ArrowLeft, BrainCircuit } from 'lucide-react';
+import { ArrowLeft, BrainCircuit, Info } from 'lucide-react';
 
 export function ReviewScreen({ onBack }: { onBack: () => void }) {
   const store = useGameStore();
@@ -67,6 +67,16 @@ export function ReviewScreen({ onBack }: { onBack: () => void }) {
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-1">
                       <div className="font-bold text-slate-100 font-serif text-xl">{w}</div>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          store.setSelectedWordForDetail(w);
+                        }}
+                        className="p-1 rounded-full hover:bg-slate-800 text-slate-400 hover:text-slate-200 transition-colors"
+                        title="View Details"
+                      >
+                        <Info className="w-4 h-4" />
+                      </button>
                       {ratio < 0.6 && (
                         <span className="text-[10px] font-bold uppercase tracking-wider bg-rose-500/10 text-rose-400 px-2 py-0.5 rounded-full border border-rose-500/20">
                           Weak

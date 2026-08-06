@@ -6,10 +6,16 @@ import { GameScreen } from './components/screens/GameScreen';
 import { ResultsScreen } from './components/screens/ResultsScreen';
 import { ReviewScreen } from './components/screens/ReviewScreen';
 import { ConfettiModal } from './components/ui/ConfettiModal';
+import { WordDetailModal } from './components/ui/WordDetailModal';
+import { useGameStore } from './store/useGameStore';
+import { WORDS } from './data/words';
 
 function App() {
   const [screen, setScreen] = useState<'home' | 'game' | 'results' | 'review'>('home');
   const [mode, setMode] = useState<string>('');
+  
+  const store = useGameStore();
+  const selectedWord = WORDS.find(w => w.word === store.selectedWordForDetail) || null;
   
   // Results state
   const [score, setScore] = useState(0);
@@ -71,6 +77,10 @@ function App() {
         </AnimatePresence>
       </main>
       <ConfettiModal />
+      <WordDetailModal 
+        word={selectedWord} 
+        onClose={() => store.setSelectedWordForDetail(null)} 
+      />
     </div>
   );
 }
