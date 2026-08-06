@@ -14,6 +14,7 @@ interface GameState {
   level: number;
   streak: number;
   bestStreak: number;
+  lostStreak: number;
   totalCorrect: number;
   totalAnswered: number;
   wordMastery: Record<string, WordMastery>;
@@ -24,6 +25,7 @@ interface GameState {
   // Actions
   addXP: (amount: number) => void;
   resetStreak: () => void;
+  recoverStreak: () => void;
   incrementStreak: () => void;
   recordAnswer: (word: string, isCorrect: boolean) => void;
   unlockAchievement: (id: string) => void;
@@ -48,6 +50,7 @@ export const useGameStore = create<GameState>()(
       level: 1,
       streak: 0,
       bestStreak: 0,
+      lostStreak: 0,
       totalCorrect: 0,
       totalAnswered: 0,
       wordMastery: {},
@@ -64,7 +67,21 @@ export const useGameStore = create<GameState>()(
         return { xp: newXp };
       }),
       
-      resetStreak: () => set({ streak: 0 }),
+      resetStreak: () => set((state) => ({ 
+        streak: 0, 
+        lostStreak: state.streak > 1 ? state.streak : 0 
+      })),
+      
+      recoverStreak: () => set((state) => {
+        if (state.lostStreak > 0 && state.xp >= 100) {
+          return {
+            streak: state.lostStreak,
+            lostStreak: 0,
+            xp: state.xp - 100
+          };
+        }
+        return state;
+      }),
       
       incrementStreak: () => set((state) => {
         const newStreak = state.streak + 1;

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useGameStore } from '../../store/useGameStore';
 import { ACHIEVEMENTS } from '../../data/achievements';
 import { cn } from '../ui/Button';
@@ -41,7 +41,7 @@ const ACHIEVEMENT_ICONS: Record<string, React.ReactNode> = {
 };
 
 export function HomeScreen({ onStartGame, onShowReview }: HomeScreenProps) {
-  const { level, xp, streak, achievements } = useGameStore();
+  const { level, xp, streak, lostStreak, achievements, recoverStreak } = useGameStore();
   const [filter, setFilter] = useState<'All' | 'Common' | 'Advanced' | 'Obscure'>('All');
 
   const neededXP = level * 100;
@@ -118,13 +118,28 @@ export function HomeScreen({ onStartGame, onShowReview }: HomeScreenProps) {
               <Star className="w-4 h-4 text-amber-400" />
               <span className="font-bold text-sm text-slate-200">{xp} <span className="text-slate-500 text-xs">XP</span></span>
             </div>
-            <div className="flex items-center gap-2 group cursor-pointer">
-              <div className="relative">
-                <Flame className="w-4 h-4 text-rose-500 group-hover:scale-110 transition-transform" />
-                {/* Subtle flame particle effect on hover */}
-                <div className="absolute inset-0 bg-rose-500/20 blur-md rounded-full opacity-0 group-hover:opacity-100 transition-opacity" />
+            <div className="flex flex-col gap-1 items-start">
+              <div className="flex items-center gap-2 group cursor-pointer">
+                <div className="relative">
+                  <Flame className="w-4 h-4 text-rose-500 group-hover:scale-110 transition-transform" />
+                  <div className="absolute inset-0 bg-rose-500/20 blur-md rounded-full opacity-0 group-hover:opacity-100 transition-opacity" />
+                </div>
+                <span className="font-bold text-sm text-slate-200">{streak} <span className="text-slate-500 text-xs">Day Streak</span></span>
               </div>
-              <span className="font-bold text-sm text-slate-200">{streak} <span className="text-slate-500 text-xs">Day Streak</span></span>
+              
+              <AnimatePresence>
+                {lostStreak > 0 && xp >= 100 && (
+                  <motion.button 
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    onClick={recoverStreak}
+                    className="text-[10px] bg-amber-500/20 text-amber-400 px-2 py-1 rounded-md font-bold hover:bg-amber-500/30 transition-colors border border-amber-500/30 shadow-[0_0_10px_rgba(245,158,11,0.2)] mt-1 whitespace-nowrap flex items-center gap-1"
+                  >
+                    Recover {lostStreak} Streak <span className="text-amber-500/70 ml-1">(-100 XP)</span>
+                  </motion.button>
+                )}
+              </AnimatePresence>
             </div>
           </div>
         </div>
@@ -282,11 +297,15 @@ export function HomeScreen({ onStartGame, onShowReview }: HomeScreenProps) {
                 className={cn(
                   "p-5 rounded-2xl text-center flex flex-col items-center justify-center border transition-all",
                   unlocked 
-                    ? "border-amber-500/30 bg-amber-500/5 shadow-lg shadow-amber-500/5" 
+                    ? `border-slate-700 bg-slate-800/50 shadow-lg` 
                     : "border-slate-800 bg-slate-900/50 opacity-60 grayscale"
                 )}
               >
-                <div className={cn("mb-3 p-3 rounded-full", unlocked ? "bg-amber-500/20 text-amber-400" : "bg-slate-800 text-slate-500")}>
+                <div className={cn(
+                  "mb-3 p-3 rounded-full shadow-inner", 
+                  unlocked ? (ach as any).bg : "bg-slate-800",
+                  unlocked ? (ach as any).color : "text-slate-500"
+                )}>
                   {ACHIEVEMENT_ICONS[ach.id] || <Trophy className="w-6 h-6" />}
                 </div>
                 <div className="font-bold text-sm text-white mb-1 leading-tight">{ach.name}</div>
@@ -294,6 +313,42 @@ export function HomeScreen({ onStartGame, onShowReview }: HomeScreenProps) {
               </motion.div>
             );
           })}
+        </div>
+      </motion.div>
+
+      {/* Weekly Leaderboard */}
+      <motion.div variants={item} className="mt-12 mb-8">
+        <h3 className="font-bold text-sm text-slate-400 uppercase tracking-wider mb-4 px-2 flex items-center gap-2">
+          <Flag className="w-4 h-4" /> Weekly Leaderboard
+        </h3>
+        <div className="bg-slate-900/50 border border-slate-800 rounded-3xl p-6 shadow-xl">
+          <div className="space-y-3">
+            {[
+              { rank: 1, name: "Sarah J.", xp: Math.max(xp + 450, 2450), streak: 12, isUser: false },
+              { rank: 2, name: "Alex K.", xp: Math.max(xp + 120, 1120), streak: 8, isUser: false },
+              { rank: 3, name: "You", xp: xp, streak: streak, isUser: true },
+              { rank: 4, name: "Mike R.", xp: xp > 50 ? xp - 50 : 50, streak: 3, isUser: false },
+            ].sort((a, b) => b.xp - a.xp).map((user, i) => (
+              <div key={user.name} className={cn("flex items-center justify-between p-4 rounded-2xl border transition-all", user.isUser ? "bg-indigo-500/10 border-indigo-500/30 shadow-[0_0_15px_rgba(99,102,241,0.1)]" : "bg-slate-800/30 border-transparent hover:bg-slate-800/50")}>
+                <div className="flex items-center gap-4">
+                  <div className={cn("w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm", i === 0 ? "bg-amber-500 text-amber-950 shadow-[0_0_10px_rgba(245,158,11,0.5)]" : i === 1 ? "bg-slate-300 text-slate-900 shadow-[0_0_10px_rgba(203,213,225,0.5)]" : i === 2 ? "bg-orange-400 text-orange-950 shadow-[0_0_10px_rgba(251,146,60,0.5)]" : "bg-slate-800 text-slate-400")}>
+                    {i + 1}
+                  </div>
+                  <div className="font-bold text-slate-200">{user.name}</div>
+                </div>
+                <div className="flex items-center gap-6">
+                  <div className="flex items-center gap-1.5">
+                    <Flame className={cn("w-4 h-4", user.streak > 0 ? "text-rose-500" : "text-slate-600")} />
+                    <span className="font-bold text-sm text-slate-300">{user.streak}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 w-16 justify-end">
+                    <Star className="w-4 h-4 text-amber-400" />
+                    <span className="font-bold text-sm text-slate-300">{user.xp}</span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </motion.div>
     </motion.div>
