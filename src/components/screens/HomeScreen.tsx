@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { useGameStore } from '../../store/useGameStore';
 import { ACHIEVEMENTS } from '../../data/achievements';
 import { cn } from '../ui/Button';
-import { Flame, Star, Trophy, BookOpen, Zap, Target, ScrollText, CheckCircle, ChevronRight, Moon, Award, Flag, Clock } from 'lucide-react';
+import { Flame, Star, Trophy, BookOpen, Zap, Target, ScrollText, CheckCircle, ChevronRight, Moon, Award, Flag, Clock, SplitSquareHorizontal } from 'lucide-react';
 
 import { type Variants } from 'framer-motion';
 
@@ -191,7 +191,7 @@ export function HomeScreen({ onStartGame, onShowReview }: HomeScreenProps) {
         <motion.div 
           whileHover={{ y: -4, scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
-          className="md:col-span-4 group cursor-pointer"
+          className="md:col-span-6 group cursor-pointer"
           onClick={() => onStartGame('speed')}
         >
           <div className="h-full bg-gradient-to-br from-amber-500/5 to-transparent border border-slate-800 rounded-3xl p-5 transition-all group-hover:border-amber-500/30">
@@ -210,7 +210,7 @@ export function HomeScreen({ onStartGame, onShowReview }: HomeScreenProps) {
         <motion.div 
           whileHover={{ y: -4, scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
-          className="md:col-span-4 group cursor-pointer"
+          className="md:col-span-6 group cursor-pointer"
           onClick={() => onStartGame('flashcard')}
         >
           <div className="h-full bg-gradient-to-br from-pink-500/5 to-transparent border border-slate-800 rounded-3xl p-5 transition-all group-hover:border-pink-500/30">
@@ -226,11 +226,31 @@ export function HomeScreen({ onStartGame, onShowReview }: HomeScreenProps) {
           </div>
         </motion.div>
 
+        {/* Contrast Match */}
+        <motion.div 
+          whileHover={{ y: -4, scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+          className="md:col-span-6 group cursor-pointer"
+          onClick={() => onStartGame('contrast')}
+        >
+          <div className="h-full bg-gradient-to-br from-cyan-500/5 to-transparent border border-slate-800 rounded-3xl p-5 transition-all group-hover:border-cyan-500/30">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-xl bg-cyan-500/10 flex items-center justify-center">
+                <SplitSquareHorizontal className="w-6 h-6 text-cyan-400" />
+              </div>
+              <div>
+                <h3 className="font-bold text-lg text-white">Contrast Match</h3>
+                <p className="text-xs text-slate-400">Synonym or Antonym?</p>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+
         {/* Review Mode */}
         <motion.div 
           whileHover={{ y: -4, scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
-          className="md:col-span-4 group cursor-pointer"
+          className="md:col-span-6 group cursor-pointer"
           onClick={onShowReview}
         >
           <div className="h-full bg-gradient-to-br from-rose-500/5 to-transparent border border-slate-800 rounded-3xl p-5 transition-all group-hover:border-rose-500/30">

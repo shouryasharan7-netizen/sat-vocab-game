@@ -28,12 +28,19 @@ export function GameScreen({ mode, onQuit, onEndGame }: GameScreenProps) {
   const [options, setOptions] = useState<Word[]>([]);
   const [feedback, setFeedback] = useState<{correct: boolean, text: string} | null>(null);
   
+  // Contrast Match State
+  const [contrastTarget, setContrastTarget] = useState<'synonym' | 'antonym'>('synonym');
+  const [contrastOptions, setContrastOptions] = useState<{text: string, isCorrect: boolean}[]>([]);
+  
   const scrambleInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     // Generate questions
     const getWeightedWords = (count: number) => {
-      const pool = [...WORDS];
+      let pool = [...WORDS];
+      if (mode === 'contrast') {
+        pool = pool.filter(w => w.synonyms && w.synonyms.length > 0 && w.antonyms && w.antonyms.length > 0);
+      }
       pool.sort((a, b) => {
         const ma = store.wordMastery[a.word] || { correct: 0, seen: 0 };
         const mb = store.wordMastery[b.word] || { correct: 0, seen: 0 };
@@ -41,6 +48,11 @@ export function GameScreen({ mode, onQuit, onEndGame }: GameScreenProps) {
         const scoreB = mb.seen === 0 ? 2 : mb.correct / mb.seen;
         return scoreA - scoreB;
       });
+      // Fallback if not enough contrast words
+      if (pool.length < count && mode === 'contrast') {
+        const extra = [...WORDS].filter(w => !pool.includes(w));
+        pool.push(...extra);
+      }
       const selected = pool.slice(0, count).sort(() => Math.random() - 0.5);
       return selected;
     };
@@ -66,6 +78,19 @@ export function GameScreen({ mode, onQuit, onEndGame }: GameScreenProps) {
     
     if (mode === 'scramble') {
       setTimeout(() => scrambleInputRef.current?.focus(), 100);
+    }
+    
+    if (mode === 'contrast') {
+      const askSyn = Math.random() > 0.5;
+      setContrastTarget(askSyn ? 'synonym' : 'antonym');
+      
+      const syn = q.synonyms && q.synonyms.length > 0 ? q.synonyms[Math.floor(Math.random() * q.synonyms.length)] : q.def;
+      const ant = q.antonyms && q.antonyms.length > 0 ? q.antonyms[Math.floor(Math.random() * q.antonyms.length)] : q.ex;
+      
+      setContrastOptions([
+        { text: syn, isCorrect: askSyn },
+        { text: ant, isCorrect: !askSyn }
+      ].sort(() => Math.random() - 0.5));
     }
     
     setAnswered(false);
@@ -147,6 +172,14 @@ export function GameScreen({ mode, onQuit, onEndGame }: GameScreenProps) {
     setAnswered(true);
     const q = questions[currentIndex];
     if (scrambleInput.trim().toLowerCase() === q.word.toLowerCase()) handleCorrect(q.word);
+    else handleWrong(q.word, q);
+  };
+
+  const onContrastSubmit = (isCorrect: boolean) => {
+    if (answered) return;
+    setAnswered(true);
+    const q = questions[currentIndex];
+    if (isCorrect) handleCorrect(q.word);
     else handleWrong(q.word, q);
   };
 
@@ -329,6 +362,45 @@ export function GameScreen({ mode, onQuit, onEndGame }: GameScreenProps) {
                     <div className="text-sm text-indigo-300 text-center">{q.def}</div>
                   </>
                 )}
+                
+                {mode === 'contrast' && (
+                  <>
+                    <div className="absolute top-4 right-4 flex items-center gap-2">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          store.setSelectedWordForDetail(q.word);
+                        }}
+                        className="p-1.5 rounded-full hover:bg-slate-800 text-slate-400 hover:text-slate-200 transition-colors"
+                        title="View Details"
+                      >
+                        <Info className="w-5 h-5" />
+                      </button>
+                      <span className="text-[10px] text-slate-500 font-bold uppercase ml-2">Mastery</span>
+                      <div className="relative w-8 h-8 flex items-center justify-center">
+                        <svg className="absolute inset-0 w-full h-full -rotate-90">
+                          <circle cx="16" cy="16" r="14" stroke="currentColor" strokeWidth="3" fill="transparent" className="text-slate-800" />
+                          <circle 
+                            cx="16" cy="16" r="14" 
+                            stroke="currentColor" 
+                            strokeWidth="3" 
+                            fill="transparent" 
+                            strokeDasharray="88"
+                            strokeDashoffset={88 - (88 * Math.min(100, ((store.wordMastery[q.word]?.correct || 0) / 5) * 100)) / 100}
+                            className="text-indigo-500 transition-all duration-1000"
+                          />
+                        </svg>
+                        <span className="text-[10px] font-bold text-white z-10">{store.wordMastery[q.word]?.correct || 0}</span>
+                      </div>
+                    </div>
+                    <div className="text-xs text-[#8888a0] uppercase tracking-widest font-bold mb-6 mt-4">
+                      Contrast Match
+                    </div>
+                    <div className="text-xl text-slate-300 mb-2">Find the <span className={cn("font-black", contrastTarget === 'synonym' ? "text-cyan-400" : "text-orange-400")}>{contrastTarget.toUpperCase()}</span> for</div>
+                    <h2 className="text-4xl md:text-5xl font-black text-white tracking-tight mb-4 text-center font-serif">{q.word}</h2>
+                    <div className="text-sm text-slate-400 max-w-sm text-center">{q.def}</div>
+                  </>
+                )}
               </Card>
 
               {mode === 'scramble' ? (
@@ -344,6 +416,34 @@ export function GameScreen({ mode, onQuit, onEndGame }: GameScreenProps) {
                     disabled={answered}
                   />
                   <Button variant="primary" size="lg" onClick={onScrambleSubmit} disabled={answered}>Submit Answer</Button>
+                </div>
+              ) : mode === 'contrast' ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {contrastOptions.map((opt, i) => {
+                    // For contrast, I'll just use a simple styling: one is cyan, one is orange originally.
+                    let stateClass = i === 0 ? "bg-cyan-500/10 border-cyan-500/20 text-cyan-100 hover:bg-cyan-500/20" : "bg-orange-500/10 border-orange-500/20 text-orange-100 hover:bg-orange-500/20";
+                    
+                    if (answered) {
+                      if (opt.isCorrect) stateClass = 'bg-green-500/15 border-green-500/40 text-green-300 shadow-[0_0_20px_rgba(34,197,94,0.15)] scale-[1.02]';
+                      else stateClass = 'bg-red-500/15 border-red-500/40 text-red-300 opacity-50 scale-[0.98]';
+                    }
+
+                    return (
+                      <motion.button
+                        key={i}
+                        disabled={answered}
+                        onClick={() => onContrastSubmit(opt.isCorrect)}
+                        whileHover={!answered ? { scale: 1.02, y: -2 } : {}}
+                        whileTap={!answered ? { scale: 0.98 } : {}}
+                        className={cn(
+                          "w-full backdrop-blur-xl border-2 rounded-2xl p-6 text-center text-xl font-bold transition-all duration-300 ease-out flex items-center justify-center min-h-[120px]",
+                          stateClass
+                        )}
+                      >
+                        {opt.text}
+                      </motion.button>
+                    );
+                  })}
                 </div>
               ) : (
                 <div className="grid grid-cols-1 gap-3">
