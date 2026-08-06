@@ -545,7 +545,7 @@ function showReview(){
   const weak=Object.entries(gameState.wordMastery).filter(([_,m])=>m.seen>0&&m.correct/m.seen<.7).sort((a,b)=>(a[1].correct/a[1].seen)-(b[1].correct/b[1].seen)).slice(0,20);
   const list=document.getElementById("fullReviewList");
   if(weak.length===0){
-    list.innerHTML='<div style="text-align:center;padding:40px;color:var(--text-dim)"><div style="font-size:48px;margin-bottom:12px">🎉</div><div style="font-size:16px;font-weight:700">No weak words!</div><div style="font-size:13px;margin-top:8px">You\\'re crushing it. Keep playing to maintain mastery.</div></div>';
+    list.innerHTML=`<div style="text-align:center;padding:40px;color:var(--text-dim)"><div style="font-size:48px;margin-bottom:12px">🎉</div><div style="font-size:16px;font-weight:700">No weak words!</div><div style="font-size:13px;margin-top:8px">You're crushing it. Keep playing to maintain mastery.</div></div>`;
   }else{
     list.innerHTML=weak.map(([w,m])=>{
       const word=WORDS.find(x=>x.word===w);
