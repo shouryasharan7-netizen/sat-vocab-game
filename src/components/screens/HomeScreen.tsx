@@ -1,9 +1,10 @@
-import { motion } from 'framer-motion';
+import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useGameStore } from '../../store/useGameStore';
 import { ACHIEVEMENTS } from '../../data/achievements';
 import { Card } from '../ui/Card';
 import { cn } from '../ui/Button';
-import { Flame, Star, Trophy, BookOpen, Zap, Target, ScrollText, CheckCircle } from 'lucide-react';
+import { Flame, Star, Trophy, BookOpen, Zap, Target, ScrollText, CheckCircle, Search, ChevronRight, Moon, Award, Flag, Clock } from 'lucide-react';
 
 import { type Variants } from 'framer-motion';
 
@@ -19,7 +20,7 @@ const container: Variants = {
 
 const item: Variants = {
   hidden: { opacity: 0, y: 20 },
-  show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 300, damping: 24 } }
+  show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 400, damping: 25 } }
 };
 
 interface HomeScreenProps {
@@ -27,150 +28,252 @@ interface HomeScreenProps {
   onShowReview: () => void;
 }
 
+const ACHIEVEMENT_ICONS: Record<string, React.ReactNode> = {
+  first_correct: <Target className="w-6 h-6" />,
+  streak_5: <Flame className="w-6 h-6" />,
+  streak_10: <Zap className="w-6 h-6" />,
+  master_10: <BookOpen className="w-6 h-6" />,
+  master_50: <Award className="w-6 h-6" />,
+  level_5: <Star className="w-6 h-6" />,
+  level_10: <Trophy className="w-6 h-6" />,
+  speed_demon: <Clock className="w-6 h-6" />,
+  perfect_quiz: <CheckCircle className="w-6 h-6" />,
+  night_owl: <Moon className="w-6 h-6" />
+};
+
 export function HomeScreen({ onStartGame, onShowReview }: HomeScreenProps) {
   const { level, xp, streak, wordMastery, achievements } = useGameStore();
+  const [filter, setFilter] = useState<'All' | 'Common' | 'Advanced' | 'Obscure'>('All');
 
   const mastered = Object.values(wordMastery).filter(m => m.correct >= 3).length;
   const neededXP = level * 100;
   const prevXP = (level - 1) * 100;
-  const progress = ((xp - prevXP) / (neededXP - prevXP)) * 100;
+  const progress = Math.max(0, Math.min(100, ((xp - prevXP) / (neededXP - prevXP)) * 100));
 
   return (
     <motion.div 
-      className="max-w-4xl mx-auto w-full px-4 py-12 relative z-10"
+      className="max-w-5xl mx-auto w-full px-4 py-8 relative z-10"
       variants={container}
       initial="hidden"
       animate="show"
       exit={{ opacity: 0, y: -20, transition: { duration: 0.2 } }}
     >
-      <motion.div variants={item} className="text-center mb-12">
-        <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight mb-4">
-          <span className="bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 to-purple-400">
-            SAT Vocab Quest
-          </span>
-        </h1>
-        <p className="text-[#8888a0] text-lg">Master 200+ Digital SAT words through play</p>
-      </motion.div>
-
-      <motion.div variants={item} className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-        <Card className="flex flex-col items-center justify-center py-6">
-          <Target className="w-6 h-6 text-indigo-400 mb-2" />
-          <div className="text-3xl font-black text-white">{level}</div>
-          <div className="text-xs text-[#8888a0] uppercase tracking-wider font-semibold mt-1">Level</div>
-        </Card>
-        <Card className="flex flex-col items-center justify-center py-6">
-          <Star className="w-6 h-6 text-amber-400 mb-2" />
-          <div className="text-3xl font-black text-white">{xp}</div>
-          <div className="text-xs text-[#8888a0] uppercase tracking-wider font-semibold mt-1">XP</div>
-        </Card>
-        <Card className="flex flex-col items-center justify-center py-6">
-          <Flame className="w-6 h-6 text-orange-500 mb-2" />
-          <div className="text-3xl font-black text-white">{streak}</div>
-          <div className="text-xs text-[#8888a0] uppercase tracking-wider font-semibold mt-1">Streak</div>
-        </Card>
-        <Card className="flex flex-col items-center justify-center py-6">
-          <Trophy className="w-6 h-6 text-yellow-400 mb-2" />
-          <div className="text-3xl font-black text-white">{mastered}</div>
-          <div className="text-xs text-[#8888a0] uppercase tracking-wider font-semibold mt-1">Mastered</div>
-        </Card>
-      </motion.div>
-
+      {/* Daily Quest Banner */}
       <motion.div variants={item} className="mb-8">
-        <Card className="p-6">
-          <div className="flex justify-between items-center mb-3">
-            <span className="font-bold text-sm">Progress to Level {level + 1}</span>
-            <span className="text-xs text-[#8888a0]">{xp - prevXP} / {neededXP - prevXP} XP</span>
+        <div className="bg-gradient-to-r from-indigo-500/10 to-violet-500/10 border border-indigo-500/20 rounded-2xl p-4 flex items-center justify-between shadow-lg shadow-indigo-500/5 backdrop-blur-sm">
+          <div className="flex items-center gap-4">
+            <div className="bg-indigo-500/20 p-2 rounded-xl">
+              <Flag className="w-6 h-6 text-indigo-400" />
+            </div>
+            <div>
+              <h2 className="font-bold text-white text-lg">Daily Quest</h2>
+              <p className="text-sm text-slate-400">Complete 10 words today</p>
+            </div>
           </div>
-          <div className="h-3 bg-[#0f0f1a] rounded-full overflow-hidden border border-white/5">
-            <motion.div 
-              className="h-full bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full"
-              initial={{ width: 0 }}
-              animate={{ width: `${Math.max(0, Math.min(100, progress))}%` }}
-              transition={{ duration: 1, type: "spring", bounce: 0.2 }}
-            />
+          <div className="flex items-center gap-3">
+            <div className="w-24 h-2 bg-slate-800 rounded-full overflow-hidden hidden sm:block">
+              <div className="h-full bg-emerald-500 w-[30%]" />
+            </div>
+            <span className="text-sm font-bold text-emerald-400">3/10</span>
+            <button className="bg-indigo-600 hover:bg-indigo-500 text-white p-2 rounded-xl transition-all shadow-md active:scale-95">
+              <ChevronRight className="w-5 h-5" />
+            </button>
           </div>
-        </Card>
+        </div>
       </motion.div>
 
-      <motion.div variants={item} className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-12">
-        <Card hoverable onClick={() => onStartGame('quiz')} className="flex items-center gap-6 p-6">
-          <div className="w-14 h-14 rounded-2xl bg-indigo-500/10 flex items-center justify-center flex-shrink-0">
-            <CheckCircle className="w-7 h-7 text-indigo-400" />
-          </div>
-          <div>
-            <h3 className="font-bold text-lg text-white mb-1">Definition Match</h3>
-            <p className="text-sm text-[#8888a0]">Pick the correct meaning</p>
-          </div>
-        </Card>
-        
-        <Card hoverable onClick={() => onStartGame('context')} className="flex items-center gap-6 p-6">
-          <div className="w-14 h-14 rounded-2xl bg-emerald-500/10 flex items-center justify-center flex-shrink-0">
-            <ScrollText className="w-7 h-7 text-emerald-400" />
-          </div>
-          <div>
-            <h3 className="font-bold text-lg text-white mb-1">Context Clues</h3>
-            <p className="text-sm text-[#8888a0]">Fill in the blank</p>
-          </div>
-        </Card>
+      {/* Header & Stats */}
+      <motion.div variants={item} className="flex flex-col md:flex-row gap-6 mb-12 items-center">
+        <div className="flex-1">
+          <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight mb-2 text-white">
+            SAT Vocab Quest
+          </h1>
+          <p className="text-slate-400 text-lg">Master 200+ Digital SAT words through play</p>
+        </div>
 
-        <Card hoverable onClick={() => onStartGame('scramble')} className="flex items-center gap-6 p-6">
-          <div className="w-14 h-14 rounded-2xl bg-blue-500/10 flex items-center justify-center flex-shrink-0">
-            <span className="text-2xl font-black text-blue-400 tracking-widest">A-Z</span>
+        <div className="flex gap-4 items-center bg-slate-900/50 p-3 rounded-3xl border border-slate-800/50 backdrop-blur-md">
+          {/* Level Badge */}
+          <div className="relative w-16 h-16 flex items-center justify-center">
+            <svg className="absolute inset-0 w-full h-full -rotate-90">
+              <circle cx="32" cy="32" r="28" stroke="currentColor" strokeWidth="4" fill="transparent" className="text-slate-800" />
+              <motion.circle 
+                cx="32" cy="32" r="28" 
+                stroke="currentColor" 
+                strokeWidth="4" 
+                fill="transparent" 
+                strokeDasharray="176"
+                strokeDashoffset={176 - (176 * progress) / 100}
+                className="text-indigo-500 drop-shadow-[0_0_8px_rgba(99,102,241,0.5)]"
+                initial={{ strokeDashoffset: 176 }}
+                animate={{ strokeDashoffset: 176 - (176 * progress) / 100 }}
+                transition={{ duration: 1.5, type: "spring", bounce: 0.1 }}
+              />
+            </svg>
+            <div className="bg-slate-900 rounded-full w-12 h-12 flex items-center justify-center z-10 font-black text-xl text-white shadow-inner">
+              {level}
+            </div>
           </div>
-          <div>
-            <h3 className="font-bold text-lg text-white mb-1">Word Scramble</h3>
-            <p className="text-sm text-[#8888a0]">Unscramble the letters</p>
+          
+          {/* XP & Streak */}
+          <div className="flex flex-col gap-2 pr-4">
+            <div className="flex items-center gap-2">
+              <Star className="w-4 h-4 text-amber-400" />
+              <span className="font-bold text-sm text-slate-200">{xp} <span className="text-slate-500 text-xs">XP</span></span>
+            </div>
+            <div className="flex items-center gap-2 group cursor-pointer">
+              <div className="relative">
+                <Flame className="w-4 h-4 text-rose-500 group-hover:scale-110 transition-transform" />
+                {/* Subtle flame particle effect on hover */}
+                <div className="absolute inset-0 bg-rose-500/20 blur-md rounded-full opacity-0 group-hover:opacity-100 transition-opacity" />
+              </div>
+              <span className="font-bold text-sm text-slate-200">{streak} <span className="text-slate-500 text-xs">Day Streak</span></span>
+            </div>
           </div>
-        </Card>
-
-        <Card hoverable onClick={() => onStartGame('flashcard')} className="flex items-center gap-6 p-6">
-          <div className="w-14 h-14 rounded-2xl bg-pink-500/10 flex items-center justify-center flex-shrink-0">
-            <BookOpen className="w-7 h-7 text-pink-400" />
-          </div>
-          <div>
-            <h3 className="font-bold text-lg text-white mb-1">Flashcards</h3>
-            <p className="text-sm text-[#8888a0]">Active recall practice</p>
-          </div>
-        </Card>
-
-        <Card hoverable onClick={() => onStartGame('speed')} className="flex items-center gap-6 p-6">
-          <div className="w-14 h-14 rounded-2xl bg-amber-500/10 flex items-center justify-center flex-shrink-0">
-            <Zap className="w-7 h-7 text-amber-400" />
-          </div>
-          <div>
-            <h3 className="font-bold text-lg text-white mb-1">Speed Run</h3>
-            <p className="text-sm text-[#8888a0]">60 seconds, max score</p>
-          </div>
-        </Card>
-
-        <Card hoverable onClick={onShowReview} className="flex items-center gap-6 p-6">
-          <div className="w-14 h-14 rounded-2xl bg-rose-500/10 flex items-center justify-center flex-shrink-0">
-            <Target className="w-7 h-7 text-rose-400" />
-          </div>
-          <div>
-            <h3 className="font-bold text-lg text-white mb-1">Review Weak Words</h3>
-            <p className="text-sm text-[#8888a0]">Focus on mistakes</p>
-          </div>
-        </Card>
+        </div>
       </motion.div>
 
+      {/* Filter Toggle */}
+      <motion.div variants={item} className="mb-6 flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+        {['All', 'Common', 'Advanced', 'Obscure'].map(f => (
+          <button 
+            key={f}
+            onClick={() => setFilter(f as any)}
+            className={cn(
+              "px-4 py-1.5 rounded-full text-sm font-semibold transition-all whitespace-nowrap active:scale-95",
+              filter === f 
+                ? "bg-slate-200 text-slate-900 shadow-md" 
+                : "bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-slate-200"
+            )}
+          >
+            {f === 'All' ? 'Study: All' : f}
+          </button>
+        ))}
+      </motion.div>
+
+      {/* Game Modes Grid */}
+      <motion.div variants={item} className="grid grid-cols-1 md:grid-cols-12 gap-4 mb-12">
+        {/* Primary Modes */}
+        <motion.div 
+          whileHover={{ y: -4, scale: 1.01 }}
+          whileTap={{ scale: 0.98 }}
+          className="md:col-span-8 group cursor-pointer"
+          onClick={() => onStartGame('quiz')}
+        >
+          <div className="h-full bg-gradient-to-br from-indigo-500/10 to-transparent border border-indigo-500/20 rounded-3xl p-6 transition-all group-hover:shadow-lg group-hover:shadow-indigo-500/10 group-hover:border-indigo-500/40 relative overflow-hidden">
+            <div className="absolute top-0 right-0 -mt-8 -mr-8 w-32 h-32 bg-indigo-500/10 rounded-full blur-2xl group-hover:bg-indigo-500/20 transition-all" />
+            <div className="flex flex-col h-full justify-between">
+              <div className="w-14 h-14 rounded-2xl bg-indigo-500/20 flex items-center justify-center mb-6 shadow-inner">
+                <CheckCircle className="w-7 h-7 text-indigo-400" />
+              </div>
+              <div>
+                <h3 className="font-bold text-2xl text-white mb-2">Definition Match</h3>
+                <p className="text-sm text-slate-400">Master precise meanings through rapid-fire multiple choice. The foundational SAT skill.</p>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+
+        <motion.div 
+          whileHover={{ y: -4, scale: 1.01 }}
+          whileTap={{ scale: 0.98 }}
+          className="md:col-span-4 group cursor-pointer"
+          onClick={() => onStartGame('context')}
+        >
+          <div className="h-full bg-gradient-to-br from-emerald-500/10 to-transparent border border-emerald-500/20 rounded-3xl p-6 transition-all group-hover:shadow-lg group-hover:shadow-emerald-500/10 group-hover:border-emerald-500/40 relative overflow-hidden">
+            <div className="absolute top-0 right-0 -mt-8 -mr-8 w-32 h-32 bg-emerald-500/10 rounded-full blur-2xl group-hover:bg-emerald-500/20 transition-all" />
+            <div className="w-12 h-12 rounded-xl bg-emerald-500/20 flex items-center justify-center mb-4 shadow-inner">
+              <ScrollText className="w-6 h-6 text-emerald-400" />
+            </div>
+            <h3 className="font-bold text-xl text-white mb-2">Context Clues</h3>
+            <p className="text-sm text-slate-400">Fill in the blanks using sentence context.</p>
+          </div>
+        </motion.div>
+
+        {/* Secondary Modes */}
+        <motion.div 
+          whileHover={{ y: -4, scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+          className="md:col-span-4 group cursor-pointer"
+          onClick={() => onStartGame('speed')}
+        >
+          <div className="h-full bg-gradient-to-br from-amber-500/5 to-transparent border border-slate-800 rounded-3xl p-5 transition-all group-hover:border-amber-500/30">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-xl bg-amber-500/10 flex items-center justify-center">
+                <Zap className="w-6 h-6 text-amber-400" />
+              </div>
+              <div>
+                <h3 className="font-bold text-lg text-white">Speed Run</h3>
+                <p className="text-xs text-slate-400">60s time attack</p>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+
+        <motion.div 
+          whileHover={{ y: -4, scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+          className="md:col-span-4 group cursor-pointer"
+          onClick={() => onStartGame('flashcard')}
+        >
+          <div className="h-full bg-gradient-to-br from-pink-500/5 to-transparent border border-slate-800 rounded-3xl p-5 transition-all group-hover:border-pink-500/30">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-xl bg-pink-500/10 flex items-center justify-center">
+                <BookOpen className="w-6 h-6 text-pink-400" />
+              </div>
+              <div>
+                <h3 className="font-bold text-lg text-white">Flashcards</h3>
+                <p className="text-xs text-slate-400">Active recall</p>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* Review Mode */}
+        <motion.div 
+          whileHover={{ y: -4, scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+          className="md:col-span-4 group cursor-pointer"
+          onClick={onShowReview}
+        >
+          <div className="h-full bg-gradient-to-br from-rose-500/5 to-transparent border border-slate-800 rounded-3xl p-5 transition-all group-hover:border-rose-500/30">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-xl bg-rose-500/10 flex items-center justify-center">
+                <Target className="w-6 h-6 text-rose-400" />
+              </div>
+              <div>
+                <h3 className="font-bold text-lg text-white">Weak Words</h3>
+                <p className="text-xs text-slate-400">Focus on mistakes</p>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+      </motion.div>
+
+      {/* Achievements Section */}
       <motion.div variants={item}>
-        <h3 className="font-bold text-sm text-[#8888a0] uppercase tracking-wider mb-4 px-2">🏆 Achievements</h3>
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+        <h3 className="font-bold text-sm text-slate-400 uppercase tracking-wider mb-4 px-2 flex items-center gap-2">
+          <Trophy className="w-4 h-4" /> Achievements
+        </h3>
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
           {ACHIEVEMENTS.map(ach => {
             const unlocked = achievements.includes(ach.id);
             return (
-              <Card 
+              <motion.div 
+                whileHover={unlocked ? { scale: 1.05 } : {}}
                 key={ach.id} 
                 className={cn(
-                  "p-4 text-center transition-all flex flex-col items-center justify-center",
-                  unlocked ? "border-yellow-500/50 bg-yellow-500/5" : "opacity-40 grayscale"
+                  "p-5 rounded-2xl text-center flex flex-col items-center justify-center border transition-all",
+                  unlocked 
+                    ? "border-amber-500/30 bg-amber-500/5 shadow-lg shadow-amber-500/5" 
+                    : "border-slate-800 bg-slate-900/50 opacity-60 grayscale"
                 )}
               >
-                <div className="text-2xl mb-2">{ach.icon}</div>
-                <div className="font-bold text-xs text-white mb-1 leading-tight">{ach.name}</div>
-                <div className="text-[10px] text-[#8888a0] leading-tight">{ach.desc}</div>
-              </Card>
+                <div className={cn("mb-3 p-3 rounded-full", unlocked ? "bg-amber-500/20 text-amber-400" : "bg-slate-800 text-slate-500")}>
+                  {ACHIEVEMENT_ICONS[ach.id] || <Trophy className="w-6 h-6" />}
+                </div>
+                <div className="font-bold text-sm text-white mb-1 leading-tight">{ach.name}</div>
+                <div className="text-[11px] text-slate-400 leading-tight">{ach.desc}</div>
+              </motion.div>
             );
           })}
         </div>
