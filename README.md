@@ -78,7 +78,7 @@ That's it. No environment variables. No database setup. No Docker. Just vibes.
 
 ## The Word List
 
-Currently sitting at around 200+ words, all hand-picked from high-frequency SAT lists and actual College Board practice tests. I'm slowly expanding it — the goal is 800+ with proper difficulty tiers (Common / Advanced / Obscure) and etymology breakdowns.
+Currently sitting at around 1000+ words, all hand-picked from high-frequency SAT lists and actual College Board practice tests. I'm slowly expanding it — the goal is 800+ with proper difficulty tiers (Common / Advanced / Obscure) and etymology breakdowns.
 
 If you want to add words, check out `src/data/words.ts` (or wherever the word list lives in your repo). The format is pretty self-explanatory:
 
