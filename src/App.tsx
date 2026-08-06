@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { AnimatePresence } from 'framer-motion';
+import { Analytics } from '@vercel/analytics/react';
 import { Background } from './components/Background';
 import { HomeScreen } from './components/screens/HomeScreen';
 import { GameScreen } from './components/screens/GameScreen';
@@ -99,6 +100,7 @@ function App() {
         onClose={() => store.setSelectedWordForDetail(null)} 
       />
       <InstallPrompt />
+      <Analytics />
     </div>
   );
 }
