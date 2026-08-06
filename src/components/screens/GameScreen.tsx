@@ -237,10 +237,10 @@ export function GameScreen({ mode, difficultyFilter = 'All', onQuit, onEndGame }
 
   return (
     <motion.div 
-      initial={{ opacity: 0, scale: 0.95 }}
-      animate={{ opacity: 1, scale: 1 }}
-      exit={{ opacity: 0, scale: 0.95 }}
-      transition={{ type: "spring", stiffness: 300, damping: 30 }}
+      initial={{ opacity: 0, scale: 0.98, filter: "blur(10px)" }}
+      animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
+      exit={{ opacity: 0, scale: 0.98, filter: "blur(10px)" }}
+      transition={{ type: "spring", stiffness: 350, damping: 25, mass: 0.5 }}
       className="max-w-2xl mx-auto w-full px-4 py-8 relative z-10"
     >
       <div className="flex justify-between items-center mb-8">

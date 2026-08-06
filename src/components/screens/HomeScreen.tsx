@@ -5,6 +5,8 @@ import { ACHIEVEMENTS } from '../../data/achievements';
 import { cn } from '../ui/Button';
 import { Flame, Star, Trophy, BookOpen, Zap, Target, ScrollText, CheckCircle, ChevronRight, Moon, Award, Flag, Clock, SplitSquareHorizontal, Users } from 'lucide-react';
 import { LeaderboardModal } from '../ui/LeaderboardModal';
+import { TextReveal } from '../ui/TextReveal';
+import { MagneticButton } from '../ui/MagneticButton';
 
 import { type Variants } from 'framer-motion';
 
@@ -64,10 +66,13 @@ export function HomeScreen({ onStartGame, onShowReview }: HomeScreenProps) {
       exit={{ opacity: 0, y: -20, transition: { duration: 0.2 } }}
     >
       {/* Daily Quest Banner */}
-      <motion.div variants={item} className="mb-8">
-        <div className="bg-gradient-to-r from-indigo-500/10 to-violet-500/10 border border-indigo-500/20 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between shadow-lg shadow-indigo-500/5 backdrop-blur-sm gap-4">
-          <div className="flex items-center gap-4">
-            <div className={cn("p-2 rounded-xl", isDailyDone ? "bg-emerald-500/20" : "bg-indigo-500/20")}>
+      <motion.div variants={item} className="mb-12">
+        <div className="relative group overflow-hidden bg-[#0a0a0a] border border-[#1a1a1a] rounded-3xl p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between shadow-[0_8px_30px_rgb(0,0,0,0.5)] transition-colors hover:border-indigo-500/30 gap-6">
+          {/* Subtle animated background glow */}
+          <div className="absolute -inset-full bg-gradient-to-r from-transparent via-indigo-500/10 to-transparent opacity-0 group-hover:opacity-100 animate-[shimmer_2s_infinite] transition-opacity" />
+          
+          <div className="flex items-center gap-5 relative z-10">
+            <div className={cn("p-3 rounded-2xl shadow-inner", isDailyDone ? "bg-emerald-500/10 border border-emerald-500/20" : "bg-indigo-500/10 border border-indigo-500/20")}>
               {isDailyDone ? <CheckCircle className="w-6 h-6 text-emerald-400" /> : <Flag className="w-6 h-6 text-indigo-400" />}
             </div>
             <div>
@@ -84,40 +89,40 @@ export function HomeScreen({ onStartGame, onShowReview }: HomeScreenProps) {
                 transition={{ duration: 1, type: "spring" }}
               />
             </div>
-            <span className="text-sm font-bold text-emerald-400 w-8">{displayDailyProgress}/10</span>
-            <button 
+            <span className="text-sm font-black tracking-widest text-emerald-400 w-10">{displayDailyProgress}/10</span>
+            <MagneticButton 
               onClick={() => { if (!isDailyDone) onStartGame('daily', filter); }}
               disabled={isDailyDone}
               className={cn(
-                "p-2 rounded-xl transition-all shadow-md active:scale-95",
-                isDailyDone ? "bg-emerald-500/20 text-emerald-500 cursor-not-allowed" : "bg-indigo-600 hover:bg-indigo-500 text-white"
+                "p-3 rounded-2xl transition-all",
+                isDailyDone ? "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 cursor-not-allowed" : "bg-indigo-600 hover:bg-indigo-500 text-white shadow-[0_0_20px_rgba(79,70,229,0.3)] hover:shadow-[0_0_30px_rgba(79,70,229,0.5)]"
               )}
             >
               {isDailyDone ? <CheckCircle className="w-5 h-5" /> : <ChevronRight className="w-5 h-5" />}
-            </button>
+            </MagneticButton>
           </div>
         </div>
       </motion.div>
 
       {/* Header & Stats */}
-      <motion.div variants={item} className="flex flex-col md:flex-row gap-6 mb-12 items-center">
+      <motion.div variants={item} className="flex flex-col md:flex-row gap-8 mb-16 items-center">
         <div className="flex-1">
-          <div className="flex items-center gap-4 mb-2">
-            <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight text-white">
-              SAT Vocab Quest
+          <div className="flex items-center gap-5 mb-4">
+            <h1 className="text-5xl md:text-7xl font-black tracking-tighter text-white">
+              <TextReveal>SAT Vocab Quest</TextReveal>
             </h1>
-            <button 
+            <MagneticButton 
               onClick={() => setIsLeaderboardOpen(true)}
-              className="bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 p-2.5 rounded-xl border border-indigo-500/20 transition-all flex items-center gap-2 group"
+              className="bg-[#111] hover:bg-[#1a1a1a] text-indigo-400 p-3 rounded-2xl border border-[#222] transition-colors flex items-center gap-2 group shadow-xl"
             >
               <Users className="w-5 h-5 group-hover:scale-110 transition-transform" />
-              <span className="font-bold text-sm hidden sm:inline">Leaderboard</span>
-            </button>
+              <span className="font-bold text-sm hidden sm:inline tracking-wide">Leaderboard</span>
+            </MagneticButton>
           </div>
-          <p className="text-slate-400 text-lg">Master 1000+ Digital SAT words through play</p>
+          <p className="text-[#888] text-xl font-medium tracking-tight">Master 1000+ Digital SAT words through play.</p>
         </div>
 
-        <div className="flex gap-4 items-center bg-slate-900/50 p-3 rounded-3xl border border-slate-800/50 backdrop-blur-md">
+        <div className="flex gap-5 items-center bg-[#0a0a0a] p-4 rounded-[2rem] border border-[#1a1a1a] shadow-[0_8px_30px_rgb(0,0,0,0.5)]">
           {/* Level Badge */}
           <div className="relative w-16 h-16 flex items-center justify-center">
             <svg className="absolute inset-0 w-full h-full -rotate-90">
@@ -192,78 +197,80 @@ export function HomeScreen({ onStartGame, onShowReview }: HomeScreenProps) {
       </motion.div>
 
       {/* Modes Grid */}
-      <motion.div variants={item} className="grid grid-cols-1 md:grid-cols-12 gap-4 mb-12">
+      <motion.div variants={item} className="grid grid-cols-1 md:grid-cols-12 gap-5 mb-16">
         {/* Definition Match */}
         <motion.div 
-          whileHover={{ y: -4, scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-          className="md:col-span-8 group cursor-pointer"
+          whileHover={{ scale: 0.98, rotate: -1 }}
+          whileTap={{ scale: 0.95 }}
+          className="md:col-span-8 group cursor-pointer relative"
           onClick={() => onStartGame('quiz', filter)}
         >
-          <div className="h-full bg-gradient-to-br from-indigo-500/10 to-transparent border border-indigo-500/20 rounded-3xl p-6 transition-all group-hover:shadow-lg group-hover:shadow-indigo-500/10 group-hover:border-indigo-500/40 relative overflow-hidden">
-            <div className="absolute top-0 right-0 -mt-8 -mr-8 w-32 h-32 bg-indigo-500/10 rounded-full blur-2xl group-hover:bg-indigo-500/20 transition-all" />
-            <div className="flex flex-col h-full justify-between">
-              <div className="w-14 h-14 rounded-2xl bg-indigo-500/20 flex items-center justify-center mb-6 shadow-inner">
-                <CheckCircle className="w-7 h-7 text-indigo-400" />
+          <div className="h-full bg-[#0a0a0a] border border-[#1a1a1a] rounded-[2rem] p-8 transition-colors group-hover:border-indigo-500/40 relative overflow-hidden shadow-[0_8px_30px_rgb(0,0,0,0.5)]">
+            <div className="absolute top-0 right-0 -mt-12 -mr-12 w-48 h-48 bg-indigo-500/10 rounded-full blur-3xl group-hover:bg-indigo-500/20 transition-all duration-700" />
+            <div className="flex flex-col h-full justify-between relative z-10">
+              <div className="w-16 h-16 rounded-2xl bg-[#111] border border-[#222] flex items-center justify-center mb-8 shadow-inner group-hover:bg-indigo-500/10 group-hover:border-indigo-500/30 transition-colors">
+                <CheckCircle className="w-8 h-8 text-indigo-400" />
               </div>
               <div>
-                <h3 className="font-bold text-2xl text-white mb-2">Definition Match</h3>
-                <p className="text-sm text-slate-400">Master precise meanings through rapid-fire multiple choice. The foundational SAT skill.</p>
+                <h3 className="font-black text-3xl text-white mb-3 tracking-tight">Definition Match</h3>
+                <p className="text-[#888] font-medium leading-relaxed">Master precise meanings through rapid-fire multiple choice. The foundational SAT skill.</p>
               </div>
             </div>
           </div>
         </motion.div>
 
         <motion.div 
-          whileHover={{ y: -4, scale: 1.01 }}
-          whileTap={{ scale: 0.98 }}
-          className="md:col-span-4 group cursor-pointer"
+          whileHover={{ scale: 0.98, rotate: 1 }}
+          whileTap={{ scale: 0.95 }}
+          className="md:col-span-4 group cursor-pointer relative"
           onClick={() => onStartGame('context', filter)}
         >
-          <div className="h-full bg-gradient-to-br from-emerald-500/10 to-transparent border border-emerald-500/20 rounded-3xl p-6 transition-all group-hover:shadow-lg group-hover:shadow-emerald-500/10 group-hover:border-emerald-500/40 relative overflow-hidden">
-            <div className="absolute top-0 right-0 -mt-8 -mr-8 w-32 h-32 bg-emerald-500/10 rounded-full blur-2xl group-hover:bg-emerald-500/20 transition-all" />
-            <div className="w-12 h-12 rounded-xl bg-emerald-500/20 flex items-center justify-center mb-4 shadow-inner">
-              <ScrollText className="w-6 h-6 text-emerald-400" />
+          <div className="h-full bg-[#0a0a0a] border border-[#1a1a1a] rounded-[2rem] p-8 transition-colors group-hover:border-emerald-500/40 relative overflow-hidden shadow-[0_8px_30px_rgb(0,0,0,0.5)]">
+            <div className="absolute top-0 right-0 -mt-12 -mr-12 w-48 h-48 bg-emerald-500/10 rounded-full blur-3xl group-hover:bg-emerald-500/20 transition-all duration-700" />
+            <div className="w-16 h-16 rounded-2xl bg-[#111] border border-[#222] flex items-center justify-center mb-6 shadow-inner group-hover:bg-emerald-500/10 group-hover:border-emerald-500/30 transition-colors relative z-10">
+              <ScrollText className="w-8 h-8 text-emerald-400" />
             </div>
-            <h3 className="font-bold text-xl text-white mb-2">Context Clues</h3>
-            <p className="text-sm text-slate-400">Fill in the blanks using sentence context.</p>
+            <h3 className="font-black text-2xl text-white mb-3 tracking-tight relative z-10">Context Clues</h3>
+            <p className="text-[#888] font-medium leading-relaxed relative z-10">Fill in the blanks using sentence context.</p>
           </div>
         </motion.div>
 
         {/* Speed Run */}
         <motion.div 
-          whileHover={{ y: -4, scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-          className="md:col-span-4 group cursor-pointer"
+          whileHover={{ scale: 0.98 }}
+          whileTap={{ scale: 0.95 }}
+          className="md:col-span-4 group cursor-pointer relative"
           onClick={() => onStartGame('speed', filter)}
         >
-          <div className="h-full bg-gradient-to-br from-amber-500/5 to-transparent border border-slate-800 rounded-3xl p-5 transition-all group-hover:border-amber-500/30">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-xl bg-amber-500/10 flex items-center justify-center">
-                <Zap className="w-6 h-6 text-amber-400" />
+          <div className="h-full bg-[#0a0a0a] border border-[#1a1a1a] rounded-[2rem] p-6 transition-colors group-hover:border-amber-500/40 shadow-[0_8px_30px_rgb(0,0,0,0.5)] overflow-hidden">
+            <div className="absolute -top-10 -right-10 w-32 h-32 bg-amber-500/10 rounded-full blur-3xl group-hover:bg-amber-500/20 transition-all duration-700" />
+            <div className="flex items-center gap-5 relative z-10">
+              <div className="w-14 h-14 rounded-2xl bg-[#111] border border-[#222] flex items-center justify-center shadow-inner group-hover:bg-amber-500/10 group-hover:border-amber-500/30 transition-colors">
+                <Zap className="w-7 h-7 text-amber-400" />
               </div>
               <div>
-                <h3 className="font-bold text-lg text-white">Speed Run</h3>
-                <p className="text-xs text-slate-400">60s time attack</p>
+                <h3 className="font-black text-xl text-white tracking-tight mb-1">Speed Run</h3>
+                <p className="text-sm text-[#888] font-medium">60s time attack</p>
               </div>
             </div>
           </div>
         </motion.div>
 
         <motion.div 
-          whileHover={{ y: -4, scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-          className="md:col-span-6 group cursor-pointer"
+          whileHover={{ scale: 0.98 }}
+          whileTap={{ scale: 0.95 }}
+          className="md:col-span-6 group cursor-pointer relative"
           onClick={() => onStartGame('flashcard', filter)}
         >
-          <div className="h-full bg-gradient-to-br from-pink-500/5 to-transparent border border-slate-800 rounded-3xl p-5 transition-all group-hover:border-pink-500/30">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-xl bg-pink-500/10 flex items-center justify-center">
-                <BookOpen className="w-6 h-6 text-pink-400" />
+          <div className="h-full bg-[#0a0a0a] border border-[#1a1a1a] rounded-[2rem] p-6 transition-colors group-hover:border-pink-500/40 shadow-[0_8px_30px_rgb(0,0,0,0.5)] overflow-hidden">
+            <div className="absolute -top-10 -right-10 w-32 h-32 bg-pink-500/10 rounded-full blur-3xl group-hover:bg-pink-500/20 transition-all duration-700" />
+            <div className="flex items-center gap-5 relative z-10">
+              <div className="w-14 h-14 rounded-2xl bg-[#111] border border-[#222] flex items-center justify-center shadow-inner group-hover:bg-pink-500/10 group-hover:border-pink-500/30 transition-colors">
+                <BookOpen className="w-7 h-7 text-pink-400" />
               </div>
               <div>
-                <h3 className="font-bold text-lg text-white">Flashcards</h3>
-                <p className="text-xs text-slate-400">Active recall</p>
+                <h3 className="font-black text-xl text-white tracking-tight mb-1">Flashcards</h3>
+                <p className="text-sm text-[#888] font-medium">Active recall</p>
               </div>
             </div>
           </div>
@@ -271,19 +278,20 @@ export function HomeScreen({ onStartGame, onShowReview }: HomeScreenProps) {
 
         {/* Contrast Match */}
         <motion.div 
-          whileHover={{ y: -4, scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-          className="md:col-span-6 group cursor-pointer"
+          whileHover={{ scale: 0.98 }}
+          whileTap={{ scale: 0.95 }}
+          className="md:col-span-6 group cursor-pointer relative"
           onClick={() => onStartGame('contrast', filter)}
         >
-          <div className="h-full bg-gradient-to-br from-cyan-500/5 to-transparent border border-slate-800 rounded-3xl p-5 transition-all group-hover:border-cyan-500/30">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-xl bg-cyan-500/10 flex items-center justify-center">
-                <SplitSquareHorizontal className="w-6 h-6 text-cyan-400" />
+          <div className="h-full bg-[#0a0a0a] border border-[#1a1a1a] rounded-[2rem] p-6 transition-colors group-hover:border-cyan-500/40 shadow-[0_8px_30px_rgb(0,0,0,0.5)] overflow-hidden">
+            <div className="absolute -top-10 -right-10 w-32 h-32 bg-cyan-500/10 rounded-full blur-3xl group-hover:bg-cyan-500/20 transition-all duration-700" />
+            <div className="flex items-center gap-5 relative z-10">
+              <div className="w-14 h-14 rounded-2xl bg-[#111] border border-[#222] flex items-center justify-center shadow-inner group-hover:bg-cyan-500/10 group-hover:border-cyan-500/30 transition-colors">
+                <SplitSquareHorizontal className="w-7 h-7 text-cyan-400" />
               </div>
               <div>
-                <h3 className="font-bold text-lg text-white">Contrast Match</h3>
-                <p className="text-xs text-slate-400">Synonym or Antonym?</p>
+                <h3 className="font-black text-xl text-white tracking-tight mb-1">Contrast Match</h3>
+                <p className="text-sm text-[#888] font-medium">Synonym or Antonym?</p>
               </div>
             </div>
           </div>
@@ -291,19 +299,20 @@ export function HomeScreen({ onStartGame, onShowReview }: HomeScreenProps) {
 
         {/* Review Mode */}
         <motion.div 
-          whileHover={{ y: -4, scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-          className="md:col-span-6 group cursor-pointer"
+          whileHover={{ scale: 0.98 }}
+          whileTap={{ scale: 0.95 }}
+          className="md:col-span-12 lg:col-span-8 group cursor-pointer relative"
           onClick={onShowReview}
         >
-          <div className="h-full bg-gradient-to-br from-rose-500/5 to-transparent border border-slate-800 rounded-3xl p-5 transition-all group-hover:border-rose-500/30">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-xl bg-rose-500/10 flex items-center justify-center">
-                <Target className="w-6 h-6 text-rose-400" />
+          <div className="h-full bg-[#0a0a0a] border border-[#1a1a1a] rounded-[2rem] p-6 transition-colors group-hover:border-rose-500/40 shadow-[0_8px_30px_rgb(0,0,0,0.5)] overflow-hidden">
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-rose-500/10 rounded-full blur-3xl group-hover:bg-rose-500/20 transition-all duration-700 opacity-0 group-hover:opacity-100" />
+            <div className="flex items-center gap-5 relative z-10">
+              <div className="w-14 h-14 rounded-2xl bg-[#111] border border-[#222] flex items-center justify-center shadow-inner group-hover:bg-rose-500/10 group-hover:border-rose-500/30 transition-colors">
+                <Target className="w-7 h-7 text-rose-400" />
               </div>
               <div>
-                <h3 className="font-bold text-lg text-white">Weak Words</h3>
-                <p className="text-xs text-slate-400">Focus on mistakes</p>
+                <h3 className="font-black text-xl text-white tracking-tight mb-1">Smart Review</h3>
+                <p className="text-sm text-[#888] font-medium">Focus on the words you struggle with.</p>
               </div>
             </div>
           </div>

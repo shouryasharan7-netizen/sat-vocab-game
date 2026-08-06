@@ -32,9 +32,10 @@ export function ReviewScreen({ onBack }: { onBack: () => void }) {
 
   return (
     <motion.div 
-      initial={{ opacity: 0, x: 20 }}
-      animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: -20 }}
+      initial={{ opacity: 0, scale: 0.98, filter: "blur(10px)" }}
+      animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
+      exit={{ opacity: 0, scale: 0.98, filter: "blur(10px)" }}
+      transition={{ type: "spring", stiffness: 350, damping: 25, mass: 0.5 }}
       className="max-w-3xl mx-auto w-full px-4 py-8 relative z-10"
     >
       <div className="flex justify-between items-center mb-8">

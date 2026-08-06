@@ -41,10 +41,10 @@ export function ResultsScreen({ score, total, mode, wrongWords, onContinue }: Re
 
   return (
     <motion.div 
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, scale: 0.95 }}
-      transition={{ type: "spring", stiffness: 300, damping: 30 }}
+      initial={{ opacity: 0, scale: 0.98, filter: "blur(10px)" }}
+      animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
+      exit={{ opacity: 0, scale: 0.98, filter: "blur(10px)" }}
+      transition={{ type: "spring", stiffness: 350, damping: 25, mass: 0.5 }}
       className="max-w-2xl mx-auto w-full px-4 py-12 relative z-10"
     >
       <Card className="text-center p-10 relative overflow-hidden mb-6 border-indigo-500/30">
