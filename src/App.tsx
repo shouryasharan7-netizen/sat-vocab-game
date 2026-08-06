@@ -1,0 +1,76 @@
+import { useState } from 'react';
+import { AnimatePresence } from 'framer-motion';
+import { Background } from './components/Background';
+import { HomeScreen } from './components/screens/HomeScreen';
+import { GameScreen } from './components/screens/GameScreen';
+import { ResultsScreen } from './components/screens/ResultsScreen';
+import { ReviewScreen } from './components/screens/ReviewScreen';
+
+function App() {
+  const [screen, setScreen] = useState<'home' | 'game' | 'results' | 'review'>('home');
+  const [mode, setMode] = useState<string>('');
+  
+  // Results state
+  const [score, setScore] = useState(0);
+  const [total, setTotal] = useState(0);
+  const [wrongWords, setWrongWords] = useState<string[]>([]);
+
+  const handleStartGame = (selectedMode: string) => {
+    setMode(selectedMode);
+    setScreen('game');
+  };
+
+  const handleEndGame = (finalScore: number, finalTotal: number, finalWrong: string[]) => {
+    setScore(finalScore);
+    setTotal(finalTotal);
+    setWrongWords(finalWrong);
+    setScreen('results');
+  };
+
+  return (
+    <div className="relative min-h-screen bg-[#0f0f1a] text-[#e8e8f0] font-sans selection:bg-indigo-500/30">
+      <Background />
+      
+      <main className="relative z-10 flex min-h-screen flex-col">
+        <AnimatePresence mode="wait">
+          {screen === 'home' && (
+            <HomeScreen 
+              key="home" 
+              onStartGame={handleStartGame} 
+              onShowReview={() => setScreen('review')} 
+            />
+          )}
+          
+          {screen === 'game' && (
+            <GameScreen 
+              key="game" 
+              mode={mode} 
+              onQuit={() => setScreen('home')} 
+              onEndGame={handleEndGame} 
+            />
+          )}
+          
+          {screen === 'results' && (
+            <ResultsScreen 
+              key="results" 
+              score={score} 
+              total={total} 
+              mode={mode}
+              wrongWords={wrongWords}
+              onContinue={() => setScreen('home')} 
+            />
+          )}
+          
+          {screen === 'review' && (
+            <ReviewScreen 
+              key="review" 
+              onBack={() => setScreen('home')} 
+            />
+          )}
+        </AnimatePresence>
+      </main>
+    </div>
+  );
+}
+
+export default App;
