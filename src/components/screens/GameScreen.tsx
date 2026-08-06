@@ -20,6 +20,8 @@ export function GameScreen({ mode, onQuit, onEndGame }: GameScreenProps) {
   const [timeLeft, setTimeLeft] = useState(60);
   const [wrongWords, setWrongWords] = useState<string[]>([]);
   
+  const [countdown, setCountdown] = useState<number | null>(mode === 'speed' ? 3 : null);
+  
   const [answered, setAnswered] = useState(false);
   const [selectedWord, setSelectedWord] = useState<string | null>(null);
   const [scrambleInput, setScrambleInput] = useState('');
@@ -101,7 +103,17 @@ export function GameScreen({ mode, onQuit, onEndGame }: GameScreenProps) {
   }, [currentIndex, questions, mode]);
 
   useEffect(() => {
-    if (mode !== 'speed') return;
+    if (countdown === null) return;
+    if (countdown > 0) {
+      const timer = setTimeout(() => setCountdown(c => (c !== null ? c - 1 : null)), 1000);
+      return () => clearTimeout(timer);
+    } else {
+      setCountdown(null);
+    }
+  }, [countdown]);
+
+  useEffect(() => {
+    if (mode !== 'speed' || countdown !== null) return;
     const timer = setInterval(() => {
       setTimeLeft(prev => {
         if (prev <= 0.1) {
@@ -186,6 +198,27 @@ export function GameScreen({ mode, onQuit, onEndGame }: GameScreenProps) {
   if (questions.length === 0) return null;
   const q = questions[currentIndex];
 
+  const THEMATIC_TAGS = ['SCIENCE & NATURE', 'HISTORY & SOCIETY', 'LITERATURE & ARTS', 'GLOBAL ISSUES', 'ECONOMICS'];
+  const thematicTag = mode === 'context' ? THEMATIC_TAGS[currentIndex % THEMATIC_TAGS.length] : null;
+
+  if (countdown !== null) {
+    return (
+      <div className="flex-1 flex flex-col pt-12 items-center justify-center px-4 relative z-10 w-full min-h-[60vh]">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={countdown}
+            initial={{ scale: 0.5, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1, transition: { type: "spring", bounce: 0.5 } }}
+            exit={{ scale: 1.5, opacity: 0, transition: { duration: 0.2 } }}
+            className="text-9xl font-black text-amber-400 font-serif drop-shadow-[0_0_30px_rgba(251,191,36,0.5)]"
+          >
+            {countdown > 0 ? countdown : 'GO!'}
+          </motion.div>
+        </AnimatePresence>
+      </div>
+    );
+  }
+
   return (
     <motion.div 
       initial={{ opacity: 0, scale: 0.95 }}
@@ -213,9 +246,12 @@ export function GameScreen({ mode, onQuit, onEndGame }: GameScreenProps) {
       </div>
 
       {mode === 'speed' && (
-        <div className="h-1.5 bg-[#0f0f1a] rounded-full overflow-hidden mb-6 border border-white/5">
+        <div className="h-1.5 bg-[#0f0f1a] rounded-full overflow-hidden mb-6 border border-white/5 relative">
           <div 
-            className="h-full bg-gradient-to-r from-green-500 via-yellow-500 to-red-500 transition-all duration-100 linear"
+            className={cn(
+              "h-full transition-all duration-100 linear",
+              timeLeft <= 10 ? "bg-red-500 animate-pulse shadow-[0_0_15px_rgba(239,68,68,0.8)]" : "bg-gradient-to-r from-green-500 via-yellow-500 to-red-500"
+            )}
             style={{ width: `${(timeLeft / 60) * 100}%` }}
           />
         </div>
@@ -342,7 +378,13 @@ export function GameScreen({ mode, onQuit, onEndGame }: GameScreenProps) {
                 
                 {mode === 'context' && (
                   <>
-                    <div className="text-xs text-[#8888a0] uppercase tracking-widest font-bold mb-6">Fill in the blank</div>
+                    <div className="flex items-center gap-2 mb-6">
+                      <span className="text-xs text-indigo-400 bg-indigo-500/10 px-2 py-1 rounded-md uppercase tracking-widest font-bold border border-indigo-500/20">
+                        {thematicTag}
+                      </span>
+                      <div className="h-px bg-white/10 flex-1" />
+                      <div className="text-xs text-[#8888a0] uppercase tracking-widest font-bold">Fill in the blank</div>
+                    </div>
                     <div className="text-xl text-white leading-relaxed italic text-center max-w-lg font-medium">
                       {q.ex.split(new RegExp(`(${q.word})`, 'gi')).map((part, i) => 
                         part.toLowerCase() === q.word.toLowerCase() 
