@@ -331,42 +331,6 @@ export function HomeScreen({ onStartGame, onShowReview }: HomeScreenProps) {
           })}
         </div>
       </motion.div>
-
-      {/* Weekly Leaderboard */}
-      <motion.div variants={item} className="mt-12 mb-8">
-        <h3 className="font-bold text-sm text-slate-400 uppercase tracking-wider mb-4 px-2 flex items-center gap-2">
-          <Flag className="w-4 h-4" /> Weekly Leaderboard
-        </h3>
-        <div className="bg-slate-900/50 border border-slate-800 rounded-3xl p-6 shadow-xl">
-          <div className="space-y-3">
-            {[
-              { rank: 1, name: "Sarah J.", xp: Math.max(xp + 450, 2450), streak: 12, isUser: false },
-              { rank: 2, name: "Alex K.", xp: Math.max(xp + 120, 1120), streak: 8, isUser: false },
-              { rank: 3, name: "You", xp: xp, streak: streak, isUser: true },
-              { rank: 4, name: "Mike R.", xp: xp > 50 ? xp - 50 : 50, streak: 3, isUser: false },
-            ].sort((a, b) => b.xp - a.xp).map((user, i) => (
-              <div key={user.name} className={cn("flex items-center justify-between p-4 rounded-2xl border transition-all", user.isUser ? "bg-indigo-500/10 border-indigo-500/30 shadow-[0_0_15px_rgba(99,102,241,0.1)]" : "bg-slate-800/30 border-transparent hover:bg-slate-800/50")}>
-                <div className="flex items-center gap-4">
-                  <div className={cn("w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm", i === 0 ? "bg-amber-500 text-amber-950 shadow-[0_0_10px_rgba(245,158,11,0.5)]" : i === 1 ? "bg-slate-300 text-slate-900 shadow-[0_0_10px_rgba(203,213,225,0.5)]" : i === 2 ? "bg-orange-400 text-orange-950 shadow-[0_0_10px_rgba(251,146,60,0.5)]" : "bg-slate-800 text-slate-400")}>
-                    {i + 1}
-                  </div>
-                  <div className="font-bold text-slate-200">{user.name}</div>
-                </div>
-                <div className="flex items-center gap-6">
-                  <div className="flex items-center gap-1.5">
-                    <Flame className={cn("w-4 h-4", user.streak > 0 ? "text-rose-500" : "text-slate-600")} />
-                    <span className="font-bold text-sm text-slate-300">{user.streak}</span>
-                  </div>
-                  <div className="flex items-center gap-1.5 w-16 justify-end">
-                    <Star className="w-4 h-4 text-amber-400" />
-                    <span className="font-bold text-sm text-slate-300">{user.xp}</span>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </motion.div>
     </motion.div>
   );
 }
