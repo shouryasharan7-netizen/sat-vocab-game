@@ -7,6 +7,7 @@ import { ResultsScreen } from './components/screens/ResultsScreen';
 import { ReviewScreen } from './components/screens/ReviewScreen';
 import { ConfettiModal } from './components/ui/ConfettiModal';
 import { WordDetailModal } from './components/ui/WordDetailModal';
+import { InstallPrompt } from './components/ui/InstallPrompt';
 import { useGameStore } from './store/useGameStore';
 import { WORDS } from './data/words';
 
@@ -81,6 +82,7 @@ function App() {
         word={selectedWord} 
         onClose={() => store.setSelectedWordForDetail(null)} 
       />
+      <InstallPrompt />
     </div>
   );
 }
