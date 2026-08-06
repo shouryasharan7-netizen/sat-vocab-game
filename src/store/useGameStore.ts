@@ -4,6 +4,8 @@ import { persist } from 'zustand/middleware';
 export interface WordMastery {
   correct: number;
   seen: number;
+  lastReviewed?: number; // timestamp
+  interval?: number; // days
 }
 
 interface GameState {
@@ -15,6 +17,7 @@ interface GameState {
   totalAnswered: number;
   wordMastery: Record<string, WordMastery>;
   achievements: string[];
+  showConfettiFor: string | null;
   
   // Actions
   addXP: (amount: number) => void;
@@ -23,7 +26,17 @@ interface GameState {
   recordAnswer: (word: string, isCorrect: boolean) => void;
   unlockAchievement: (id: string) => void;
   checkAchievements: () => string[]; // returns newly unlocked achievement IDs
+  clearConfetti: () => void;
 }
+
+const calculateNextInterval = (correct: number, currentInterval: number = 0, isCorrect: boolean) => {
+  if (!isCorrect) return 1; // Reset to 1 day on failure
+  if (currentInterval === 0) return 1;
+  if (currentInterval === 1) return 3;
+  if (currentInterval === 3) return 7;
+  if (currentInterval === 7) return 14;
+  return 30; // Max 30 days
+};
 
 export const useGameStore = create<GameState>()(
   persist(
@@ -36,6 +49,7 @@ export const useGameStore = create<GameState>()(
       totalAnswered: 0,
       wordMastery: {},
       achievements: [],
+      showConfettiFor: null,
 
       addXP: (amount) => set((state) => {
         const newXp = state.xp + amount;
@@ -57,19 +71,35 @@ export const useGameStore = create<GameState>()(
       }),
       
       recordAnswer: (word, isCorrect) => set((state) => {
-        const currentMastery = state.wordMastery[word] || { correct: 0, seen: 0 };
+        const currentMastery = state.wordMastery[word] || { correct: 0, seen: 0, interval: 0 };
+        
+        const newCorrect = currentMastery.correct + (isCorrect ? 1 : 0);
+        const newSeen = currentMastery.seen + 1;
+        const newInterval = calculateNextInterval(newCorrect, currentMastery.interval, isCorrect);
+        
+        // Trigger confetti if this is the 5th correct answer
+        let confettiWord = state.showConfettiFor;
+        if (isCorrect && newCorrect === 5) {
+          confettiWord = word;
+        }
+
         return {
           totalAnswered: state.totalAnswered + 1,
           totalCorrect: state.totalCorrect + (isCorrect ? 1 : 0),
+          showConfettiFor: confettiWord,
           wordMastery: {
             ...state.wordMastery,
             [word]: {
-              seen: currentMastery.seen + 1,
-              correct: currentMastery.correct + (isCorrect ? 1 : 0),
+              seen: newSeen,
+              correct: newCorrect,
+              lastReviewed: Date.now(),
+              interval: newInterval,
             }
           }
         };
       }),
+      
+      clearConfetti: () => set({ showConfettiFor: null }),
       
       unlockAchievement: (id) => set((state) => {
         if (!state.achievements.includes(id)) {
@@ -92,7 +122,7 @@ export const useGameStore = create<GameState>()(
         if (state.bestStreak >= 5) unlock("streak_5");
         if (state.bestStreak >= 10) unlock("streak_10");
         
-        const mastered = Object.values(state.wordMastery).filter(m => m.correct >= 3).length;
+        const mastered = Object.values(state.wordMastery).filter(m => m.correct >= 5).length;
         if (mastered >= 10) unlock("master_10");
         if (mastered >= 50) unlock("master_50");
         
@@ -102,7 +132,6 @@ export const useGameStore = create<GameState>()(
         const hour = new Date().getHours();
         if (hour >= 22 || hour < 5) unlock("night_owl");
         
-        // Actually unlock them in state
         newUnlocks.forEach(id => get().unlockAchievement(id));
         return newUnlocks;
       }

@@ -5,6 +5,7 @@ import { HomeScreen } from './components/screens/HomeScreen';
 import { GameScreen } from './components/screens/GameScreen';
 import { ResultsScreen } from './components/screens/ResultsScreen';
 import { ReviewScreen } from './components/screens/ReviewScreen';
+import { ConfettiModal } from './components/ui/ConfettiModal';
 
 function App() {
   const [screen, setScreen] = useState<'home' | 'game' | 'results' | 'review'>('home');
@@ -69,6 +70,7 @@ function App() {
           )}
         </AnimatePresence>
       </main>
+      <ConfettiModal />
     </div>
   );
 }

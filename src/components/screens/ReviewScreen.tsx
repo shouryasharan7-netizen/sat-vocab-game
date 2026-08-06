@@ -3,14 +3,31 @@ import { useGameStore } from '../../store/useGameStore';
 import { WORDS } from '../../data/words';
 import { Card } from '../ui/Card';
 import { Button, cn } from '../ui/Button';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, BrainCircuit } from 'lucide-react';
 
 export function ReviewScreen({ onBack }: { onBack: () => void }) {
   const store = useGameStore();
 
+  const now = Date.now();
+  const DAY_IN_MS = 24 * 60 * 60 * 1000;
+
   const weakWords = Object.entries(store.wordMastery)
-    .filter(([_, m]) => m.seen > 0 && m.correct / m.seen < 0.7)
-    .sort((a, b) => (a[1].correct / a[1].seen) - (b[1].correct / b[1].seen))
+    .filter(([_, m]) => {
+      if (m.seen === 0) return false;
+      const accuracy = m.correct / m.seen;
+      const isWeak = accuracy < 0.6;
+      
+      const lastRev = m.lastReviewed || 0;
+      const intervalDays = m.interval || 0;
+      const isDue = (now - lastRev) > (intervalDays * DAY_IN_MS);
+      
+      return isWeak || isDue;
+    })
+    .sort((a, b) => {
+      const accA = a[1].correct / Math.max(1, a[1].seen);
+      const accB = b[1].correct / Math.max(1, b[1].seen);
+      return accA - accB; // Lowest accuracy first
+    })
     .slice(0, 20);
 
   return (
@@ -18,43 +35,76 @@ export function ReviewScreen({ onBack }: { onBack: () => void }) {
       initial={{ opacity: 0, x: 20 }}
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: -20 }}
-      className="max-w-2xl mx-auto w-full px-4 py-8 relative z-10"
+      className="max-w-3xl mx-auto w-full px-4 py-8 relative z-10"
     >
       <div className="flex justify-between items-center mb-8">
         <Button variant="secondary" size="sm" onClick={onBack} className="gap-2">
           <ArrowLeft className="w-4 h-4" /> Back to Home
         </Button>
-        <div className="font-bold text-white text-lg bg-white/5 px-4 py-2 rounded-xl border border-white/5">
-          📚 Weak Words
+        <div className="flex items-center gap-2 font-bold text-white text-sm bg-rose-500/10 text-rose-400 px-4 py-2 rounded-xl border border-rose-500/20 shadow-inner">
+          <BrainCircuit className="w-5 h-5" /> Smart Review
         </div>
       </div>
 
       {weakWords.length === 0 ? (
         <Card className="text-center p-12 py-20 flex flex-col items-center">
-          <div className="text-6xl mb-6">🎉</div>
-          <h2 className="text-2xl font-bold text-white mb-2">No weak words!</h2>
-          <p className="text-[#8888a0]">You're crushing it. Keep playing to maintain mastery.</p>
+          <div className="w-20 h-20 bg-emerald-500/10 rounded-full flex items-center justify-center mb-6 shadow-inner">
+            <span className="text-4xl text-emerald-400">✨</span>
+          </div>
+          <h2 className="text-2xl font-bold text-white mb-2">You're all caught up!</h2>
+          <p className="text-slate-400 max-w-sm">No words are due for review right now. Keep playing other modes to discover new words.</p>
         </Card>
       ) : (
         <div className="flex flex-col gap-3">
           {weakWords.map(([w, m]) => {
             const wordObj = WORDS.find(x => x.word === w);
             const ratio = m.correct / m.seen;
+            const masteryProgress = Math.min(100, (m.correct / 5) * 100);
+
             return (
-              <Card key={w} className="p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div className="flex-1">
-                  <div className="font-bold text-amber-400 text-xl mb-1">{w}</div>
-                  <div className="text-sm text-[#8888a0] leading-relaxed">{wordObj?.def}</div>
-                </div>
-                <div className={cn(
-                  "text-xs px-3 py-1.5 rounded-lg font-bold self-start md:self-auto shrink-0",
-                  ratio < 0.4 ? "bg-red-500/15 text-red-400 border border-red-500/20" :
-                  ratio < 0.7 ? "bg-orange-500/15 text-orange-400 border border-orange-500/20" :
-                  "bg-green-500/15 text-green-400 border border-green-500/20"
-                )}>
-                  {m.correct}/{m.seen} Mastered
-                </div>
-              </Card>
+              <motion.div whileHover={{ scale: 1.01 }} key={w}>
+                <Card className="p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 border-slate-800/50 hover:border-slate-700 transition-all shadow-sm hover:shadow-md">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3 mb-1">
+                      <div className="font-bold text-slate-100 font-serif text-xl">{w}</div>
+                      {ratio < 0.6 && (
+                        <span className="text-[10px] font-bold uppercase tracking-wider bg-rose-500/10 text-rose-400 px-2 py-0.5 rounded-full border border-rose-500/20">
+                          Weak
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-sm text-slate-400 leading-relaxed font-serif">{wordObj?.def}</div>
+                  </div>
+
+                  <div className="flex items-center gap-4 shrink-0">
+                    <div className="flex flex-col items-end">
+                      <span className="text-xs text-slate-500 font-semibold uppercase tracking-wider mb-1">Mastery</span>
+                      <div className="flex items-center gap-2">
+                        {/* Word Mastery Ring */}
+                        <div className="relative w-8 h-8 flex items-center justify-center">
+                          <svg className="absolute inset-0 w-full h-full -rotate-90">
+                            <circle cx="16" cy="16" r="14" stroke="currentColor" strokeWidth="3" fill="transparent" className="text-slate-800" />
+                            <circle 
+                              cx="16" cy="16" r="14" 
+                              stroke="currentColor" 
+                              strokeWidth="3" 
+                              fill="transparent" 
+                              strokeDasharray="88"
+                              strokeDashoffset={88 - (88 * masteryProgress) / 100}
+                              className={cn(
+                                "transition-all duration-1000",
+                                masteryProgress >= 100 ? "text-emerald-500" : "text-indigo-500"
+                              )}
+                            />
+                          </svg>
+                          <span className="text-[10px] font-bold text-white z-10">{m.correct}</span>
+                        </div>
+                        <span className="text-sm font-bold text-slate-300">/ 5</span>
+                      </div>
+                    </div>
+                  </div>
+                </Card>
+              </motion.div>
             );
           })}
         </div>

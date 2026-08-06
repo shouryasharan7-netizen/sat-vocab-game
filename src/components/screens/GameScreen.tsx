@@ -221,8 +221,28 @@ export function GameScreen({ mode, onQuit, onEndGame }: GameScreenProps) {
               >
                 {/* Front */}
                 <Card className="absolute inset-0 backface-hidden flex flex-col items-center justify-center p-8">
-                  <div className="text-5xl font-black text-amber-400 mb-4 tracking-tight drop-shadow-[0_0_15px_rgba(251,191,36,0.2)]">{q.word}</div>
-                  <div className="text-sm text-[#8888a0]">Tap to reveal definition</div>
+                  {/* Mastery Ring for Flashcard */}
+                  <div className="absolute top-4 right-4 flex items-center gap-2">
+                    <span className="text-[10px] text-slate-500 font-bold uppercase">Mastery</span>
+                    <div className="relative w-8 h-8 flex items-center justify-center">
+                      <svg className="absolute inset-0 w-full h-full -rotate-90">
+                        <circle cx="16" cy="16" r="14" stroke="currentColor" strokeWidth="3" fill="transparent" className="text-slate-800" />
+                        <circle 
+                          cx="16" cy="16" r="14" 
+                          stroke="currentColor" 
+                          strokeWidth="3" 
+                          fill="transparent" 
+                          strokeDasharray="88"
+                          strokeDashoffset={88 - (88 * Math.min(100, ((store.wordMastery[q.word]?.correct || 0) / 5) * 100)) / 100}
+                          className="text-indigo-500 transition-all duration-1000"
+                        />
+                      </svg>
+                      <span className="text-[10px] font-bold text-white z-10">{store.wordMastery[q.word]?.correct || 0}</span>
+                    </div>
+                  </div>
+
+                  <div className="text-5xl font-black text-amber-400 mb-4 tracking-tight drop-shadow-[0_0_15px_rgba(251,191,36,0.2)] font-serif">{q.word}</div>
+                  <div className="text-sm text-slate-400">Tap to reveal definition</div>
                 </Card>
                 {/* Back */}
                 <Card className="absolute inset-0 backface-hidden rotate-y-180 flex flex-col items-center justify-center p-8 text-center bg-indigo-950/40 border-indigo-500/30">
@@ -244,8 +264,26 @@ export function GameScreen({ mode, onQuit, onEndGame }: GameScreenProps) {
                 
                 {(mode === 'quiz' || mode === 'speed') && (
                   <>
-                    <h2 className="text-4xl md:text-5xl font-black text-amber-400 tracking-tight drop-shadow-[0_0_15px_rgba(251,191,36,0.2)] mb-3 text-center">{q.word}</h2>
-                    <span className="text-[#8888a0] uppercase tracking-widest text-xs font-bold bg-white/5 px-3 py-1 rounded-full">{q.pos}</span>
+                    <div className="absolute top-4 right-4 flex items-center gap-2">
+                      <span className="text-[10px] text-slate-500 font-bold uppercase">Mastery</span>
+                      <div className="relative w-8 h-8 flex items-center justify-center">
+                        <svg className="absolute inset-0 w-full h-full -rotate-90">
+                          <circle cx="16" cy="16" r="14" stroke="currentColor" strokeWidth="3" fill="transparent" className="text-slate-800" />
+                          <circle 
+                            cx="16" cy="16" r="14" 
+                            stroke="currentColor" 
+                            strokeWidth="3" 
+                            fill="transparent" 
+                            strokeDasharray="88"
+                            strokeDashoffset={88 - (88 * Math.min(100, ((store.wordMastery[q.word]?.correct || 0) / 5) * 100)) / 100}
+                            className="text-indigo-500 transition-all duration-1000"
+                          />
+                        </svg>
+                        <span className="text-[10px] font-bold text-white z-10">{store.wordMastery[q.word]?.correct || 0}</span>
+                      </div>
+                    </div>
+                    <h2 className="text-4xl md:text-5xl font-black text-amber-400 tracking-tight drop-shadow-[0_0_15px_rgba(251,191,36,0.2)] mb-3 text-center font-serif">{q.word}</h2>
+                    <span className="text-slate-400 uppercase tracking-widest text-xs font-bold bg-white/5 px-3 py-1 rounded-full">{q.pos}</span>
                   </>
                 )}
                 
