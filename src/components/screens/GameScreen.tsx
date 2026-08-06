@@ -59,11 +59,14 @@ export function GameScreen({ mode, difficultyFilter = 'All', onQuit, onEndGame }
       if (mode === 'contrast') {
         pool = pool.filter(w => w.synonyms && w.synonyms.length > 0 && w.antonyms && w.antonyms.length > 0);
       }
+      pool.sort(() => Math.random() - 0.5); // Shuffle first
       pool.sort((a, b) => {
         const ma = store.wordMastery[a.word] || { correct: 0, seen: 0 };
         const mb = store.wordMastery[b.word] || { correct: 0, seen: 0 };
-        const scoreA = ma.seen === 0 ? 2 + Math.random() : (ma.correct / ma.seen);
-        const scoreB = mb.seen === 0 ? 2 + Math.random() : (mb.correct / mb.seen);
+        
+        // Add random jitter to prevent deterministic repetition
+        const scoreA = ma.seen === 0 ? Math.random() * 0.5 : (ma.correct / ma.seen) + (Math.random() * 0.4);
+        const scoreB = mb.seen === 0 ? Math.random() * 0.5 : (mb.correct / mb.seen) + (Math.random() * 0.4);
         return scoreA - scoreB;
       });
       if (pool.length < count && mode === 'contrast') {
@@ -510,7 +513,20 @@ export function GameScreen({ mode, difficultyFilter = 'All', onQuit, onEndGame }
                             stateClass
                           )}
                         >
-                          {mode === 'quiz' || mode === 'speed' ? opt.def : opt.word}
+                          {mode === 'quiz' || mode === 'speed' ? opt.def : (
+                            <div className="flex flex-col">
+                              <span className="font-bold">{opt.word}</span>
+                              {answered && mode === 'context' && (
+                                <motion.span 
+                                  initial={{ opacity: 0, height: 0 }}
+                                  animate={{ opacity: 1, height: 'auto' }}
+                                  className="text-sm text-zinc-400 mt-2 italic font-serif leading-relaxed"
+                                >
+                                  {opt.def}
+                                </motion.span>
+                              )}
+                            </div>
+                          )}
                         </motion.button>
                       );
                     })}
