@@ -1,10 +1,11 @@
-import { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import confetti from 'canvas-confetti';
 import { useGameStore } from '../../store/useGameStore';
 import { WORDS, type Word } from '../../data/words';
 import { Card } from '../ui/Card';
 import { Button, cn } from '../ui/Button';
-import { ArrowLeft, Flame, Star, ListChecks, Info } from 'lucide-react';
+import { ArrowLeft, Flame, Star, ListChecks } from 'lucide-react';
 
 interface GameScreenProps {
   mode: string;
@@ -29,28 +30,30 @@ export function GameScreen({ mode, difficultyFilter = 'All', onQuit, onEndGame }
   const [isFlipped, setIsFlipped] = useState(false);
   
   const [options, setOptions] = useState<Word[]>([]);
-  const [feedback, setFeedback] = useState<{correct: boolean, text: string} | null>(null);
   
   // Contrast Match State
   const [contrastTarget, setContrastTarget] = useState<'synonym' | 'antonym'>('synonym');
   const [contrastOptions, setContrastOptions] = useState<{text: string, isCorrect: boolean}[]>([]);
   
   const scrambleInputRef = useRef<HTMLInputElement>(null);
+  const cardRef = useRef<HTMLDivElement>(null);
+
+  // New states for streak overlays and shaking
+  const [streakOverlay, setStreakOverlay] = useState<string | null>(null);
+  const [shakeTrigger, setShakeTrigger] = useState(0);
 
   useEffect(() => {
-    // Generate questions
     const getWeightedWords = (count: number) => {
       let pool = [...WORDS];
       
       if (difficultyFilter !== 'All') {
         pool = pool.filter(w => {
           const len = w.word.length;
-          // Improved heuristic: Common words are short, Obscure words are very long or contain rare letters like x, z, q
           const hasRare = /[qzx]/i.test(w.word);
           const diff = len <= 6 && !hasRare ? 'Common' : (len >= 10 || hasRare) ? 'Obscure' : 'Advanced';
           return diff === difficultyFilter;
         });
-        if (pool.length === 0) pool = [...WORDS]; // fallback
+        if (pool.length === 0) pool = [...WORDS]; 
       }
 
       if (mode === 'contrast') {
@@ -59,18 +62,15 @@ export function GameScreen({ mode, difficultyFilter = 'All', onQuit, onEndGame }
       pool.sort((a, b) => {
         const ma = store.wordMastery[a.word] || { correct: 0, seen: 0 };
         const mb = store.wordMastery[b.word] || { correct: 0, seen: 0 };
-        // Give un-seen words a random high score so they are mixed in
         const scoreA = ma.seen === 0 ? 2 + Math.random() : (ma.correct / ma.seen);
         const scoreB = mb.seen === 0 ? 2 + Math.random() : (mb.correct / mb.seen);
         return scoreA - scoreB;
       });
-      // Fallback if not enough contrast words
       if (pool.length < count && mode === 'contrast') {
         const extra = [...WORDS].filter(w => !pool.includes(w));
         pool.push(...extra);
       }
-      const selected = pool.slice(0, count).sort(() => Math.random() - 0.5);
-      return selected;
+      return pool.slice(0, count).sort(() => Math.random() - 0.5);
     };
 
     let count = 10;
@@ -87,7 +87,6 @@ export function GameScreen({ mode, difficultyFilter = 'All', onQuit, onEndGame }
     
     const q = questions[currentIndex];
     
-    // Generate options for quiz and context
     if (mode === 'quiz' || mode === 'context' || mode === 'speed') {
       const wrong = [...WORDS].filter(w => w.word !== q.word).sort(() => Math.random() - 0.5).slice(0, 3);
       setOptions([...wrong, q].sort(() => Math.random() - 0.5));
@@ -114,7 +113,6 @@ export function GameScreen({ mode, difficultyFilter = 'All', onQuit, onEndGame }
     setSelectedWord(null);
     setScrambleInput('');
     setIsFlipped(false);
-    setFeedback(null);
   }, [currentIndex, questions, mode]);
 
   useEffect(() => {
@@ -133,8 +131,6 @@ export function GameScreen({ mode, difficultyFilter = 'All', onQuit, onEndGame }
       setTimeLeft(prev => {
         if (prev <= 0.1) {
           clearInterval(timer);
-          // score and wrongWords are captured in this interval closure, so they might be stale!
-          // We can use a ref for latest values if we need to, or rely on functional updates.
           return 0;
         }
         return prev - 0.1;
@@ -143,7 +139,6 @@ export function GameScreen({ mode, difficultyFilter = 'All', onQuit, onEndGame }
     return () => clearInterval(timer);
   }, [mode, countdown]);
 
-  // Use refs to get latest state for endgame
   const scoreRef = useRef(score);
   const wrongWordsRef = useRef(wrongWords);
   useEffect(() => { scoreRef.current = score; }, [score]);
@@ -161,18 +156,44 @@ export function GameScreen({ mode, difficultyFilter = 'All', onQuit, onEndGame }
     }
   }, [currentIndex, questions.length, mode, onEndGame]);
 
-  const handleCorrect = (word: string, noDelay: boolean = false) => {
+  const triggerConfetti = (e?: React.MouseEvent) => {
+    if (e) {
+      const rect = (e.target as HTMLElement).getBoundingClientRect();
+      const x = (rect.left + rect.width / 2) / window.innerWidth;
+      const y = (rect.top + rect.height / 2) / window.innerHeight;
+      confetti({
+        particleCount: 50,
+        spread: 60,
+        origin: { x, y },
+        colors: ['#10b981', '#34d399', '#ffffff']
+      });
+    } else {
+      confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+    }
+  };
+
+  const showStreakOverlay = (text: string) => {
+    setStreakOverlay(text);
+    setTimeout(() => setStreakOverlay(null), 1500);
+  };
+
+  const handleCorrect = (word: string, e?: React.MouseEvent, noDelay: boolean = false) => {
+    const oldStreak = store.streak;
     store.incrementStreak();
     store.recordAnswer(word, true);
     setScore(s => s + 1);
     
-    const xp = mode === 'speed' ? 5 : 10 + (store.streak > 3 ? 5 : 0);
-    store.addXP(xp);
+    const xpGain = mode === 'speed' ? 5 : 10 + (store.streak > 3 ? 5 : 0);
+    store.addXP(xpGain);
     
     if (mode === 'daily') store.incrementDaily();
     
-    setFeedback({ correct: true, text: '✅ Correct! Keep it up!' });
+    triggerConfetti(e);
     
+    if (oldStreak === 4) {
+      showStreakOverlay('UNSTOPPABLE');
+    }
+
     if (!noDelay && mode !== 'flashcard') {
       setTimeout(() => nextQuestion(), 800);
     } else {
@@ -180,14 +201,17 @@ export function GameScreen({ mode, difficultyFilter = 'All', onQuit, onEndGame }
     }
   };
 
-  const handleWrong = (word: string, actualWord: Word, noDelay: boolean = false) => {
+  const handleWrong = (word: string, _actualWord?: Word, noDelay: boolean = false) => {
+    if (store.streak >= 5) {
+      showStreakOverlay('BROKEN');
+    }
     store.resetStreak();
     store.recordAnswer(word, false);
     setWrongWords(prev => [...prev, word]);
     
     if (mode === 'daily') store.incrementDaily();
     
-    setFeedback({ correct: false, text: `❌ The answer was: ${actualWord.word} — ${actualWord.def}` });
+    setShakeTrigger(prev => prev + 1); // trigger shake animation
     
     if (!noDelay && mode !== 'flashcard') {
       setTimeout(() => nextQuestion(), 1500);
@@ -198,18 +222,17 @@ export function GameScreen({ mode, difficultyFilter = 'All', onQuit, onEndGame }
 
   const nextQuestion = () => {
     if (mode === 'speed' && currentIndex + 1 >= questions.length) {
-      // Endless mode for speed
       setQuestions(prev => [...prev, ...WORDS.sort(() => Math.random() - 0.5).slice(0, 10)]);
     }
     setCurrentIndex(i => i + 1);
   };
 
-  const onAnswerQuiz = (selected: string) => {
+  const onAnswerQuiz = (selected: string, e: React.MouseEvent) => {
     if (answered) return;
     setAnswered(true);
     setSelectedWord(selected);
     const q = questions[currentIndex];
-    if (selected === q.word) handleCorrect(q.word);
+    if (selected === q.word) handleCorrect(q.word, e);
     else handleWrong(q.word, q);
   };
 
@@ -221,32 +244,31 @@ export function GameScreen({ mode, difficultyFilter = 'All', onQuit, onEndGame }
     else handleWrong(q.word, q);
   };
 
-  const onContrastSubmit = (isCorrect: boolean) => {
+  const onContrastSubmit = (isCorrect: boolean, e: React.MouseEvent) => {
     if (answered) return;
     setAnswered(true);
     const q = questions[currentIndex];
-    if (isCorrect) handleCorrect(q.word);
+    if (isCorrect) handleCorrect(q.word, e);
     else handleWrong(q.word, q);
   };
 
   if (questions.length === 0) return null;
   const q = questions[currentIndex];
-  if (!q) return null; // Wait for onEndGame to trigger
-
+  if (!q) return null; 
 
   const THEMATIC_TAGS = ['SCIENCE & NATURE', 'HISTORY & SOCIETY', 'LITERATURE & ARTS', 'GLOBAL ISSUES', 'ECONOMICS'];
   const thematicTag = mode === 'context' ? THEMATIC_TAGS[currentIndex % THEMATIC_TAGS.length] : null;
 
   if (countdown !== null) {
     return (
-      <div className="flex-1 flex flex-col pt-12 items-center justify-center px-4 relative z-10 w-full min-h-[60vh]">
+      <div className="flex-1 flex flex-col pt-12 items-center justify-center px-4 relative z-10 w-full min-h-screen">
         <AnimatePresence mode="wait">
           <motion.div
             key={countdown}
             initial={{ scale: 0.5, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1, transition: { type: "spring", bounce: 0.5 } }}
-            exit={{ scale: 1.5, opacity: 0, transition: { duration: 0.2 } }}
-            className="text-9xl font-black text-amber-400 font-serif drop-shadow-[0_0_30px_rgba(251,191,36,0.5)]"
+            animate={{ scale: 1, opacity: 1, transition: { type: "spring", bounce: 0.5, duration: 0.6 } }}
+            exit={{ scale: 2, opacity: 0, transition: { duration: 0.3 } }}
+            className="text-[12rem] font-black text-white drop-shadow-[0_0_60px_rgba(255,255,255,0.3)] tabular-nums"
           >
             {countdown > 0 ? countdown : 'GO!'}
           </motion.div>
@@ -255,307 +277,248 @@ export function GameScreen({ mode, difficultyFilter = 'All', onQuit, onEndGame }
     );
   }
 
+  // Timer SVG values
+  const strokeDasharray = 283;
+  const strokeDashoffset = 283 - (283 * (timeLeft / 60));
+  let timerColor = "#10b981"; // emerald
+  if (timeLeft < 20) timerColor = "#f59e0b"; // amber
+  if (timeLeft < 10) timerColor = "#f43f5e"; // rose
+
   return (
     <motion.div 
       initial={{ opacity: 0, scale: 0.98, filter: "blur(10px)" }}
       animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
       exit={{ opacity: 0, scale: 0.98, filter: "blur(10px)" }}
       transition={{ type: "spring", stiffness: 350, damping: 25, mass: 0.5 }}
-      className="max-w-2xl mx-auto w-full px-4 py-8 relative z-10"
+      className="max-w-3xl mx-auto w-full px-4 py-8 relative z-10 min-h-screen flex flex-col"
     >
       <div className="flex justify-between items-center mb-8">
-        <Button variant="secondary" size="sm" onClick={onQuit} className="gap-2">
+        <Button variant="secondary" size="sm" onClick={onQuit} className="gap-2 glass-pill text-zinc-300 hover:text-white">
           <ArrowLeft className="w-4 h-4" /> Quit
         </Button>
-        <div className="flex items-center gap-4 text-sm font-semibold text-[#8888a0]">
-          <div className="flex items-center gap-1.5 bg-orange-500/10 text-orange-500 px-3 py-1.5 rounded-lg border border-orange-500/20">
-            <Flame className="w-4 h-4" /> {store.streak}
+        <div className="flex items-center gap-4 text-sm font-semibold text-zinc-400">
+          
+          <div className="relative group">
+            <div className="flex items-center gap-1.5 glass-pill px-3 py-1.5 text-zinc-200">
+              <Flame className={cn("w-4 h-4", store.streak >= 3 ? "text-amber-500 animate-pulse" : "text-zinc-500")} /> {store.streak}
+            </div>
+            {/* Cinematic Overlay */}
+            <AnimatePresence>
+              {streakOverlay && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10, scale: 0.8 }}
+                  animate={{ opacity: 1, y: -30, scale: 1 }}
+                  exit={{ opacity: 0, y: -40, scale: 1.1 }}
+                  className={cn(
+                    "absolute top-0 left-1/2 -translate-x-1/2 font-black text-xl tracking-widest whitespace-nowrap drop-shadow-[0_0_15px_rgba(255,255,255,0.5)]",
+                    streakOverlay === 'UNSTOPPABLE' ? "text-amber-400" : "text-rose-500"
+                  )}
+                >
+                  {streakOverlay}
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
-          <div className="flex items-center gap-1.5 bg-yellow-500/10 text-yellow-400 px-3 py-1.5 rounded-lg border border-yellow-500/20">
-            <Star className="w-4 h-4" /> {score}
+
+          <div className="flex items-center gap-1.5 glass-pill px-3 py-1.5 text-zinc-200">
+            <Star className="w-4 h-4 text-emerald-400" /> {score}
           </div>
-          <div className="flex items-center gap-1.5 bg-indigo-500/10 text-indigo-400 px-3 py-1.5 rounded-lg border border-indigo-500/20">
-            <ListChecks className="w-4 h-4" /> 
+          <div className="flex items-center gap-1.5 glass-pill px-3 py-1.5 text-zinc-200">
+            <ListChecks className="w-4 h-4 text-indigo-400" /> 
             {mode === 'speed' ? currentIndex + 1 : `${currentIndex + 1}/${questions.length}`}
           </div>
         </div>
       </div>
 
       {mode === 'speed' && (
-        <div className="h-1.5 bg-[#0f0f1a] rounded-full overflow-hidden mb-6 border border-white/5 relative">
-          <div 
-            className={cn(
-              "h-full transition-all duration-100 linear",
-              timeLeft <= 10 ? "bg-red-500 animate-pulse shadow-[0_0_15px_rgba(239,68,68,0.8)]" : "bg-gradient-to-r from-green-500 via-yellow-500 to-red-500"
+        <div className="flex justify-center mb-12">
+          <div className={cn("relative w-24 h-24 flex items-center justify-center", timeLeft <= 10 && "animate-pulse")}>
+            <svg className="absolute inset-0 w-full h-full -rotate-90">
+              <circle cx="48" cy="48" r="45" stroke="rgba(255,255,255,0.06)" strokeWidth="6" fill="transparent" />
+              <motion.circle 
+                cx="48" cy="48" r="45" 
+                stroke={timerColor}
+                strokeWidth="6" 
+                fill="transparent" 
+                strokeDasharray={strokeDasharray}
+                strokeDashoffset={strokeDashoffset}
+                strokeLinecap="round"
+                className="transition-colors duration-500"
+              />
+            </svg>
+            <div className="text-2xl font-mono font-bold tabular-nums text-white z-10">{Math.ceil(timeLeft)}</div>
+            {timeLeft <= 10 && (
+              <div className="absolute inset-0 rounded-full border border-rose-500/50 animate-ping" />
             )}
-            style={{ width: `${(timeLeft / 60) * 100}%` }}
-          />
+          </div>
         </div>
       )}
 
       <AnimatePresence mode="wait">
         <motion.div
           key={currentIndex}
-          initial={{ opacity: 0, x: 20 }}
+          initial={{ opacity: 0, x: 40 }}
           animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0, x: -20 }}
-          transition={{ duration: 0.2 }}
+          exit={{ opacity: 0, x: -40 }}
+          transition={{ duration: 0.3, ease: 'easeOut' }}
+          className="flex-1 flex flex-col justify-center pb-20"
         >
-          {feedback && mode !== 'flashcard' && (
-            <motion.div 
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className={cn(
-                "p-4 rounded-xl mb-4 font-semibold text-center text-sm border",
-                feedback.correct 
-                  ? "bg-green-500/10 text-green-400 border-green-500/20" 
-                  : "bg-red-500/10 text-red-400 border-red-500/20"
-              )}
-            >
-              {feedback.text}
-            </motion.div>
-          )}
-
-          {mode === 'flashcard' ? (
-            <div className="perspective-1000 mb-8">
-              <motion.div 
-                className="relative w-full h-[320px] cursor-pointer transform-style-3d"
-                animate={{ rotateY: isFlipped ? 180 : 0 }}
-                transition={{ type: "spring", stiffness: 200, damping: 20 }}
-                onClick={() => setIsFlipped(!isFlipped)}
-              >
-                {/* Front */}
-                <Card className="absolute inset-0 backface-hidden flex flex-col items-center justify-center p-8">
-                  {/* Mastery Ring for Flashcard */}
-                  <div className="absolute top-4 right-4 flex items-center gap-2">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        store.setSelectedWordForDetail(q.word);
-                      }}
-                      className="p-1.5 rounded-full hover:bg-slate-800 text-slate-400 hover:text-slate-200 transition-colors"
-                      title="View Details"
-                    >
-                      <Info className="w-5 h-5" />
-                    </button>
-                    <span className="text-[10px] text-slate-500 font-bold uppercase ml-2">Mastery</span>
-                    <div className="relative w-8 h-8 flex items-center justify-center">
-                      <svg className="absolute inset-0 w-full h-full -rotate-90">
-                        <circle cx="16" cy="16" r="14" stroke="currentColor" strokeWidth="3" fill="transparent" className="text-slate-800" />
-                        <circle 
-                          cx="16" cy="16" r="14" 
-                          stroke="currentColor" 
-                          strokeWidth="3" 
-                          fill="transparent" 
-                          strokeDasharray="88"
-                          strokeDashoffset={88 - (88 * Math.min(100, ((store.wordMastery[q.word]?.correct || 0) / 5) * 100)) / 100}
-                          className="text-indigo-500 transition-all duration-1000"
-                        />
-                      </svg>
-                      <span className="text-[10px] font-bold text-white z-10">{store.wordMastery[q.word]?.correct || 0}</span>
-                    </div>
-                  </div>
-
-                  <div className="text-5xl font-black text-amber-400 mb-4 tracking-tight drop-shadow-[0_0_15px_rgba(251,191,36,0.2)] font-serif">{q.word}</div>
-                  <div className="text-sm text-slate-400">Tap to reveal definition</div>
-                </Card>
-                {/* Back */}
-                <Card className="absolute inset-0 backface-hidden rotate-y-180 flex flex-col items-center justify-center p-8 text-center bg-indigo-950/40 border-indigo-500/30">
-                  <div className="text-3xl font-black text-amber-400 mb-4">{q.word}</div>
-                  <div className="text-lg text-white mb-6 leading-relaxed">{q.def}</div>
-                  <div className="text-sm text-[#8888a0] italic max-w-sm">"{q.ex}"</div>
-                </Card>
-              </motion.div>
-              
-              <div className="flex justify-center gap-4 mt-8">
-                <Button variant="danger" size="lg" className="w-40" onClick={() => handleWrong(q.word, q, true)}>Didn't Know ❌</Button>
-                <Button variant="success" size="lg" className="w-40" onClick={() => handleCorrect(q.word, true)}>Knew It ✅</Button>
+          <motion.div
+            animate={shakeTrigger ? { x: [-10, 10, -10, 10, 0] } : {}}
+            transition={{ duration: 0.4 }}
+          >
+            {mode === 'flashcard' ? (
+              <div className="perspective-1000 mb-8 w-full max-w-xl mx-auto">
+                <motion.div 
+                  className="relative w-full h-[400px] cursor-pointer transform-style-3d"
+                  animate={{ rotateY: isFlipped ? 180 : 0 }}
+                  transition={{ type: "spring", stiffness: 200, damping: 20 }}
+                  onClick={() => setIsFlipped(!isFlipped)}
+                >
+                  <Card className="absolute inset-0 backface-hidden flex flex-col items-center justify-center p-8 glass-card">
+                    <div className="text-5xl font-serif italic text-white mb-4 tracking-tight">{q.word}</div>
+                    <div className="text-sm text-zinc-500 uppercase tracking-widest font-bold">Tap to reveal definition</div>
+                  </Card>
+                  <Card className="absolute inset-0 backface-hidden rotate-y-180 flex flex-col items-center justify-center p-8 text-center bg-indigo-950/20 border-indigo-500/20">
+                    <div className="text-3xl font-serif italic text-white mb-6">{q.word}</div>
+                    <div className="text-xl text-zinc-300 mb-8 leading-relaxed font-medium">{q.def}</div>
+                    <div className="text-sm text-zinc-500 italic max-w-md">"{q.ex}"</div>
+                  </Card>
+                </motion.div>
+                
+                <div className="flex justify-center gap-4 mt-12">
+                  <Button variant="danger" size="lg" className="w-48 bg-rose-500/10 text-rose-500 border border-rose-500/20 hover:bg-rose-500/20" onClick={() => handleWrong(q.word, q, true)}>Need Review</Button>
+                  <Button variant="success" size="lg" className="w-48 bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 hover:bg-emerald-500/20" onClick={(e) => handleCorrect(q.word, e, true)}>Got It</Button>
+                </div>
               </div>
-            </div>
-          ) : (
-            <>
-              <Card className="flex flex-col items-center justify-center min-h-[260px] p-8 mb-6 relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/10 rounded-full blur-[100px] pointer-events-none" />
-                
-                {(mode === 'quiz' || mode === 'speed') && (
-                  <>
-                    <div className="absolute top-4 right-4 flex items-center gap-2">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          store.setSelectedWordForDetail(q.word);
-                        }}
-                        className="p-1.5 rounded-full hover:bg-slate-800 text-slate-400 hover:text-slate-200 transition-colors"
-                        title="View Details"
-                      >
-                        <Info className="w-5 h-5" />
-                      </button>
-                      <span className="text-[10px] text-slate-500 font-bold uppercase ml-2">Mastery</span>
-                      <div className="relative w-8 h-8 flex items-center justify-center">
-                        <svg className="absolute inset-0 w-full h-full -rotate-90">
-                          <circle cx="16" cy="16" r="14" stroke="currentColor" strokeWidth="3" fill="transparent" className="text-slate-800" />
-                          <circle 
-                            cx="16" cy="16" r="14" 
-                            stroke="currentColor" 
-                            strokeWidth="3" 
-                            fill="transparent" 
-                            strokeDasharray="88"
-                            strokeDashoffset={88 - (88 * Math.min(100, ((store.wordMastery[q.word]?.correct || 0) / 5) * 100)) / 100}
-                            className="text-indigo-500 transition-all duration-1000"
-                          />
-                        </svg>
-                        <span className="text-[10px] font-bold text-white z-10">{store.wordMastery[q.word]?.correct || 0}</span>
+            ) : (
+              <>
+                <Card ref={cardRef} className="flex flex-col items-center justify-center min-h-[280px] p-8 mb-8 relative overflow-hidden glass-card">
+                  {(mode === 'quiz' || mode === 'speed') && (
+                    <>
+                      <h2 className="text-5xl md:text-6xl font-serif italic text-white tracking-tight mb-4 text-center">{q.word}</h2>
+                      <span className="text-zinc-500 uppercase tracking-widest text-xs font-bold bg-white/5 px-3 py-1 rounded-full">{q.pos}</span>
+                    </>
+                  )}
+                  
+                  {mode === 'context' && (
+                    <>
+                      <div className="flex items-center gap-2 mb-8">
+                        <span className="text-xs text-indigo-400 bg-indigo-500/10 px-3 py-1.5 rounded-full uppercase tracking-widest font-bold">
+                          {thematicTag}
+                        </span>
+                        <div className="h-px bg-white/10 flex-1 ml-4" />
                       </div>
-                    </div>
-                    <h2 className="text-4xl md:text-5xl font-black text-amber-400 tracking-tight drop-shadow-[0_0_15px_rgba(251,191,36,0.2)] mb-3 text-center font-serif">{q.word}</h2>
-                    <span className="text-slate-400 uppercase tracking-widest text-xs font-bold bg-white/5 px-3 py-1 rounded-full">{q.pos}</span>
-                  </>
-                )}
-                
-                {mode === 'context' && (
-                  <>
-                    <div className="flex items-center gap-2 mb-6">
-                      <span className="text-xs text-indigo-400 bg-indigo-500/10 px-2 py-1 rounded-md uppercase tracking-widest font-bold border border-indigo-500/20">
-                        {thematicTag}
-                      </span>
-                      <div className="h-px bg-white/10 flex-1" />
-                      <div className="text-xs text-[#8888a0] uppercase tracking-widest font-bold">Fill in the blank</div>
-                    </div>
-                    <div className="text-xl text-white leading-relaxed italic text-center max-w-lg font-medium">
-                      {q.ex.split(new RegExp(`(${q.word})`, 'gi')).map((part, i) => 
-                        part.toLowerCase() === q.word.toLowerCase() 
-                          ? <span key={i} className="inline-block min-w-[100px] border-b-2 border-indigo-400 text-indigo-300 mx-1 px-2 font-bold not-italic" />
-                          : <span key={i}>{part}</span>
-                      )}
-                    </div>
-                  </>
-                )}
-
-                {mode === 'scramble' && (
-                  <>
-                    <div className="text-xs text-[#8888a0] uppercase tracking-widest font-bold mb-6">Unscramble this word</div>
-                    <div className="text-4xl font-black text-white tracking-[0.25em] mb-4 text-center">
-                      {q.word.split('').sort(() => Math.random() - 0.5).join('')}
-                    </div>
-                    <div className="text-sm text-indigo-300 text-center">{q.def}</div>
-                  </>
-                )}
-                
-                {mode === 'contrast' && (
-                  <>
-                    <div className="absolute top-4 right-4 flex items-center gap-2">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          store.setSelectedWordForDetail(q.word);
-                        }}
-                        className="p-1.5 rounded-full hover:bg-slate-800 text-slate-400 hover:text-slate-200 transition-colors"
-                        title="View Details"
-                      >
-                        <Info className="w-5 h-5" />
-                      </button>
-                      <span className="text-[10px] text-slate-500 font-bold uppercase ml-2">Mastery</span>
-                      <div className="relative w-8 h-8 flex items-center justify-center">
-                        <svg className="absolute inset-0 w-full h-full -rotate-90">
-                          <circle cx="16" cy="16" r="14" stroke="currentColor" strokeWidth="3" fill="transparent" className="text-slate-800" />
-                          <circle 
-                            cx="16" cy="16" r="14" 
-                            stroke="currentColor" 
-                            strokeWidth="3" 
-                            fill="transparent" 
-                            strokeDasharray="88"
-                            strokeDashoffset={88 - (88 * Math.min(100, ((store.wordMastery[q.word]?.correct || 0) / 5) * 100)) / 100}
-                            className="text-indigo-500 transition-all duration-1000"
-                          />
-                        </svg>
-                        <span className="text-[10px] font-bold text-white z-10">{store.wordMastery[q.word]?.correct || 0}</span>
+                      <div className="text-2xl text-white leading-relaxed text-center max-w-xl font-medium font-serif">
+                        {q.ex.split(new RegExp(`(${q.word})`, 'gi')).map((part, i) => 
+                          part.toLowerCase() === q.word.toLowerCase() 
+                            ? <span key={i} className="inline-block min-w-[120px] border-b-2 border-indigo-400 text-indigo-300 mx-2 px-2 font-bold" />
+                            : <span key={i}>{part}</span>
+                        )}
                       </div>
-                    </div>
-                    <div className="text-xs text-[#8888a0] uppercase tracking-widest font-bold mb-6 mt-4">
-                      Contrast Match
-                    </div>
-                    <div className="text-xl text-slate-300 mb-2">Find the <span className={cn("font-black", contrastTarget === 'synonym' ? "text-cyan-400" : "text-orange-400")}>{contrastTarget.toUpperCase()}</span> for</div>
-                    <h2 className="text-4xl md:text-5xl font-black text-white tracking-tight mb-4 text-center font-serif">{q.word}</h2>
-                    <div className="text-sm text-slate-400 max-w-sm text-center">{q.def}</div>
-                  </>
+                    </>
+                  )}
+
+                  {mode === 'scramble' && (
+                    <>
+                      <div className="text-xs text-zinc-500 uppercase tracking-widest font-bold mb-8">Unscramble this word</div>
+                      <div className="text-5xl font-mono text-white tracking-[0.25em] mb-6 text-center uppercase">
+                        {q.word.split('').sort(() => Math.random() - 0.5).join('')}
+                      </div>
+                      <div className="text-lg text-zinc-400 text-center font-serif italic max-w-md">{q.def}</div>
+                    </>
+                  )}
+                  
+                  {mode === 'contrast' && (
+                    <>
+                      <div className="text-xs text-zinc-500 uppercase tracking-widest font-bold mb-8">
+                        Contrast Match
+                      </div>
+                      <div className="text-xl text-zinc-400 mb-4 font-medium">Find the <span className={cn("font-black", contrastTarget === 'synonym' ? "text-cyan-400" : "text-amber-400")}>{contrastTarget.toUpperCase()}</span> for</div>
+                      <h2 className="text-5xl font-serif italic text-white tracking-tight mb-6 text-center">{q.word}</h2>
+                      <div className="text-base text-zinc-500 max-w-sm text-center">{q.def}</div>
+                    </>
+                  )}
+                </Card>
+
+                {/* Answer Options */}
+                {mode === 'scramble' ? (
+                  <div className="flex flex-col gap-4 max-w-md mx-auto">
+                    <input
+                      ref={scrambleInputRef}
+                      type="text"
+                      value={scrambleInput}
+                      onChange={(e) => setScrambleInput(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && onScrambleSubmit()}
+                      placeholder="Type the word..."
+                      className="w-full bg-[#141414] border border-white/10 rounded-2xl p-6 text-center text-2xl font-mono tracking-widest text-white placeholder:text-zinc-700 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all"
+                      disabled={answered}
+                    />
+                    <Button variant="primary" size="lg" onClick={onScrambleSubmit} disabled={answered} className="h-16 text-lg rounded-2xl shadow-[0_0_20px_rgba(79,70,229,0.2)]">Submit Answer</Button>
+                  </div>
+                ) : mode === 'contrast' ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-2xl mx-auto">
+                    {contrastOptions.map((opt, i) => {
+                      let stateClass = i === 0 
+                        ? "bg-cyan-500/5 border-cyan-500/20 text-cyan-100 hover:bg-cyan-500/10" 
+                        : "bg-amber-500/5 border-amber-500/20 text-amber-100 hover:bg-amber-500/10";
+                      
+                      if (answered) {
+                        if (opt.isCorrect) stateClass = 'bg-emerald-500/10 border-emerald-500/40 text-emerald-400 shadow-[0_0_30px_rgba(16,185,129,0.15)] scale-[1.02]';
+                        else stateClass = 'bg-rose-500/10 border-rose-500/40 text-rose-400 opacity-50 scale-[0.98]';
+                      }
+
+                      return (
+                        <motion.button
+                          key={i}
+                          disabled={answered}
+                          onClick={(e: any) => onContrastSubmit(opt.isCorrect, e)}
+                          whileHover={!answered ? { scale: 1.02, y: -2 } : {}}
+                          whileTap={!answered ? { scale: 0.98 } : {}}
+                          className={cn(
+                            "w-full glass-card rounded-2xl p-8 text-center text-xl font-bold transition-all duration-300 ease-out flex items-center justify-center min-h-[140px]",
+                            stateClass
+                          )}
+                        >
+                          {opt.text}
+                        </motion.button>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 gap-3 max-w-2xl mx-auto w-full">
+                    {options.map((opt, i) => {
+                      const isSelected = selectedWord === opt.word;
+                      const isCorrect = opt.word === q.word;
+                      
+                      let stateClass = '';
+                      if (answered) {
+                        if (isCorrect) stateClass = 'bg-emerald-500/10 border-emerald-500/40 text-emerald-400 shadow-[0_0_30px_rgba(16,185,129,0.15)] scale-[1.02] z-10 relative';
+                        else if (isSelected) stateClass = 'bg-rose-500/10 border-rose-500/40 text-rose-400 scale-[0.98]';
+                        else stateClass = 'opacity-40 border-white/5';
+                      }
+
+                      return (
+                        <motion.button
+                          key={i}
+                          disabled={answered}
+                          onClick={(e: any) => onAnswerQuiz(opt.word, e)}
+                          whileHover={!answered ? { scale: 1.01, x: 4 } : {}}
+                          whileTap={!answered ? { scale: 0.98 } : {}}
+                          className={cn(
+                            "w-full glass-card rounded-xl p-5 text-left text-base font-medium text-zinc-300 transition-all duration-300 ease-out hover:border-indigo-500/30 hover:bg-[#1a1a1a]",
+                            stateClass
+                          )}
+                        >
+                          {mode === 'quiz' || mode === 'speed' ? opt.def : opt.word}
+                        </motion.button>
+                      );
+                    })}
+                  </div>
                 )}
-              </Card>
-
-              {mode === 'scramble' ? (
-                <div className="flex flex-col gap-4">
-                  <input
-                    ref={scrambleInputRef}
-                    type="text"
-                    value={scrambleInput}
-                    onChange={(e) => setScrambleInput(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && onScrambleSubmit()}
-                    placeholder="Type the word..."
-                    className="w-full bg-[#1a1a2e]/80 border border-white/10 rounded-xl p-5 text-center text-xl font-bold tracking-widest text-white placeholder:text-white/20 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all backdrop-blur-xl"
-                    disabled={answered}
-                  />
-                  <Button variant="primary" size="lg" onClick={onScrambleSubmit} disabled={answered}>Submit Answer</Button>
-                </div>
-              ) : mode === 'contrast' ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {contrastOptions.map((opt, i) => {
-                    // For contrast, I'll just use a simple styling: one is cyan, one is orange originally.
-                    let stateClass = i === 0 ? "bg-cyan-500/10 border-cyan-500/20 text-cyan-100 hover:bg-cyan-500/20" : "bg-orange-500/10 border-orange-500/20 text-orange-100 hover:bg-orange-500/20";
-                    
-                    if (answered) {
-                      if (opt.isCorrect) stateClass = 'bg-green-500/15 border-green-500/40 text-green-300 shadow-[0_0_20px_rgba(34,197,94,0.15)] scale-[1.02]';
-                      else stateClass = 'bg-red-500/15 border-red-500/40 text-red-300 opacity-50 scale-[0.98]';
-                    }
-
-                    return (
-                      <motion.button
-                        key={i}
-                        disabled={answered}
-                        onClick={() => onContrastSubmit(opt.isCorrect)}
-                        whileHover={!answered ? { scale: 1.02, y: -2 } : {}}
-                        whileTap={!answered ? { scale: 0.98 } : {}}
-                        className={cn(
-                          "w-full backdrop-blur-xl border-2 rounded-2xl p-6 text-center text-xl font-bold transition-all duration-300 ease-out flex items-center justify-center min-h-[120px]",
-                          stateClass
-                        )}
-                      >
-                        {opt.text}
-                      </motion.button>
-                    );
-                  })}
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 gap-3">
-                  {options.map((opt, i) => {
-                    const isSelected = selectedWord === opt.word;
-                    const isCorrect = opt.word === q.word;
-                    
-                    let stateClass = '';
-                    if (answered) {
-                      if (isCorrect) stateClass = 'bg-green-500/15 border-green-500/40 text-green-300 shadow-[0_0_20px_rgba(34,197,94,0.15)] scale-[1.02]';
-                      else if (isSelected) stateClass = 'bg-red-500/15 border-red-500/40 text-red-300 scale-[0.98]';
-                      else stateClass = 'opacity-50';
-                    }
-
-                    return (
-                      <motion.button
-                        key={i}
-                        disabled={answered}
-                        onClick={() => onAnswerQuiz(opt.word)}
-                        whileHover={!answered ? { scale: 1.01, y: -2 } : {}}
-                        whileTap={!answered ? { scale: 0.98 } : {}}
-                        className={cn(
-                          "w-full bg-[#1a1a2e]/80 backdrop-blur-xl border border-white/5 rounded-xl p-5 text-left text-[15px] font-medium text-[#e8e8f0] transition-all duration-300 ease-out hover:border-indigo-500/30 hover:bg-[#252542]",
-                          stateClass
-                        )}
-                      >
-                        {mode === 'quiz' || mode === 'speed' ? opt.def : opt.word}
-                      </motion.button>
-                    );
-                  })}
-                </div>
-              )}
-            </>
-          )}
+              </>
+            )}
+          </motion.div>
         </motion.div>
       </AnimatePresence>
     </motion.div>

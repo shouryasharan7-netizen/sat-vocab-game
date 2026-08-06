@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
-import { AnimatePresence } from 'framer-motion';
-import { Background } from './components/Background';
+import { AnimatePresence, motion } from 'framer-motion';
 import { HomeScreen } from './components/screens/HomeScreen';
 import { GameScreen } from './components/screens/GameScreen';
 import { ResultsScreen } from './components/screens/ResultsScreen';
 import { ReviewScreen } from './components/screens/ReviewScreen';
+import { SmoothScroll } from './components/ui/SmoothScroll';
+import { CustomCursor } from './components/ui/CustomCursor';
+import { ScrollVelocitySkew } from './components/ui/ScrollVelocitySkew';
 import { ConfettiModal } from './components/ui/ConfettiModal';
 import { WordDetailModal } from './components/ui/WordDetailModal';
 import { InstallPrompt } from './components/ui/InstallPrompt';
@@ -13,18 +15,19 @@ import { WORDS } from './data/words';
 import { auth } from './lib/firebase';
 import { signInAnonymously, onAuthStateChanged } from 'firebase/auth';
 
-function App() {
-  const [screen, setScreen] = useState<'home' | 'game' | 'results' | 'review'>('home');
-  const [mode, setMode] = useState<string>('');
-  const [filter, setFilter] = useState<string>('All');
+type Screen = 'home' | 'game' | 'results' | 'review';
+type Mode = 'daily' | 'speed' | 'flashcard' | 'contrast' | 'context' | 'scramble' | null;
+
+export default function App() {
+  const [screen, setScreen] = useState<Screen>('home');
+  const [mode, setMode] = useState<Mode>(null);
+  const [filter, setFilter] = useState<'All' | 'Common' | 'Advanced' | 'Obscure'>('All');
   
   const store = useGameStore();
   const selectedWord = WORDS.find(w => w.word === store.selectedWordForDetail) || null;
-  
-  // Initialize Firebase Anonymous Auth
+
   useEffect(() => {
-    if (!auth) return;
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+    const unsubscribe = onAuthStateChanged(auth as any, (user) => {
       if (user) {
         store.setUid(user.uid);
       } else {
@@ -34,7 +37,6 @@ function App() {
     return () => unsubscribe();
   }, []);
 
-  // Results state
   const [score, setScore] = useState(0);
   const [total, setTotal] = useState(0);
   const [wrongWords, setWrongWords] = useState<string[]>([]);
@@ -46,53 +48,67 @@ function App() {
     setScreen('results');
   };
 
+  const pageVariants: any = {
+    initial: { opacity: 0, scale: 0.98, y: 10, filter: 'blur(4px)' },
+    animate: { opacity: 1, scale: 1, y: 0, filter: 'blur(0px)', transition: { duration: 0.4, ease: [0.22, 1, 0.36, 1] } },
+    exit: { opacity: 0, scale: 0.98, y: -10, filter: 'blur(4px)', transition: { duration: 0.25, ease: 'easeIn' } },
+  };
+
   return (
-    <div className="relative min-h-screen bg-[#0f0f1a] text-[#e8e8f0] font-sans selection:bg-indigo-500/30">
-      <Background />
+    <div className="relative min-h-screen bg-[#0a0a0a] text-[#fafafa] font-sans selection:bg-violet-500/30 overflow-hidden">
+      <CustomCursor />
       
-      <main className="relative z-10 flex min-h-screen flex-col">
-        <AnimatePresence mode="wait">
-          {screen === 'home' && (
-            <HomeScreen 
-              key="home" 
-              onStartGame={(m, f = 'All') => {
-                setMode(m);
-                setFilter(f);
-                setScreen('game');
-              }} 
-              onShowReview={() => setScreen('review')} 
-            />
-          )}
-          
-          {screen === 'game' && (
-            <GameScreen 
-              key="game" 
-              mode={mode} 
-              difficultyFilter={filter}
-              onQuit={() => setScreen('home')} 
-              onEndGame={handleEndGame} 
-            />
-          )}
-          
-          {screen === 'results' && (
-            <ResultsScreen 
-              key="results" 
-              score={score} 
-              total={total} 
-              mode={mode}
-              wrongWords={wrongWords}
-              onContinue={() => setScreen('home')} 
-            />
-          )}
-          
-          {screen === 'review' && (
-            <ReviewScreen 
-              key="review" 
-              onBack={() => setScreen('home')} 
-            />
-          )}
-        </AnimatePresence>
-      </main>
+      <SmoothScroll>
+        <ScrollVelocitySkew>
+          <main className="relative z-10 flex min-h-screen flex-col">
+            <AnimatePresence mode="wait">
+              {screen === 'home' && (
+                <motion.div key="home" variants={pageVariants} initial="initial" animate="animate" exit="exit" className="flex-1 flex flex-col">
+                  <HomeScreen 
+                    onStartGame={(m, f = 'All') => {
+                      setMode(m as Mode);
+                      setFilter(f as any);
+                      setScreen('game');
+                    }} 
+                    onShowReview={() => setScreen('review')} 
+                  />
+                </motion.div>
+              )}
+
+              {screen === 'game' && mode && (
+                <motion.div key="game" variants={pageVariants} initial="initial" animate="animate" exit="exit" className="flex-1 flex flex-col">
+                  <GameScreen
+                    mode={mode}
+                    difficultyFilter={filter}
+                    onEndGame={handleEndGame}
+                    onQuit={() => setScreen('home')}
+                  />
+                </motion.div>
+              )}
+
+              {screen === 'results' && (
+                <motion.div key="results" variants={pageVariants} initial="initial" animate="animate" exit="exit" className="flex-1 flex flex-col">
+                  <ResultsScreen
+                    score={score}
+                    total={total}
+                    mode={mode || ''}
+                    wrongWords={wrongWords}
+                    onContinue={() => setScreen('home')}
+                  />
+                </motion.div>
+              )}
+
+              {screen === 'review' && (
+                <motion.div key="review" variants={pageVariants} initial="initial" animate="animate" exit="exit" className="flex-1 flex flex-col">
+                  <ReviewScreen
+                    onBack={() => setScreen('home')}
+                  />
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </main>
+        </ScrollVelocitySkew>
+      </SmoothScroll>
       <ConfettiModal />
       <WordDetailModal 
         word={selectedWord} 
@@ -102,5 +118,3 @@ function App() {
     </div>
   );
 }
-
-export default App;

@@ -1,38 +1,96 @@
 @import "tailwindcss";
 
 @theme {
-  --color-bg: #050505; /* Deep absolute dark */
-  --color-card: #0a0a0a; /* Almost black */
-  --color-card-hover: #121212; /* Slight raise */
-  --color-text-main: #f8fafc; /* slate-50 */
-  --color-text-dim: #94a3b8; /* slate-400 */
-  --color-accent: #4f46e5; /* indigo-600 */
-  --color-accent-light: #8b5cf6; /* violet-500 */
-  --color-success: #10b981; /* emerald-500 */
-  --color-danger: #f43f5e; /* rose-500 */
-  --color-warning: #f59e0b; /* amber-500 */
-  --color-gold: #fbbf24;
-  --color-border: #1a1a1a; /* Very subtle border */
+  --color-bg: #0a0a0a;
+  --color-surface: #141414;
+  --color-elevated: #1a1a1a;
+  
+  --color-text-main: #fafafa;
+  --color-text-secondary: #a1a1aa;
+  --color-text-muted: #52525b;
+  
+  --color-border: rgba(255, 255, 255, 0.06);
+  --color-border-hover: rgba(255, 255, 255, 0.12);
+
+  --color-accent: #8b5cf6;
+  --color-success: #10b981;
+  --color-danger: #f43f5e;
+  --color-warning: #f59e0b;
   
   --font-sans: 'Inter', system-ui, sans-serif;
   --font-serif: 'Source Serif 4', Georgia, serif;
   --font-mono: 'JetBrains Mono', monospace;
 }
 
-body {
-  font-family: var(--font-sans);
-  background-color: var(--color-bg);
-  color: var(--color-text-main);
-  overflow-x: hidden;
-  /* Premium noise texture */
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.03'/%3E%3C/svg%3E");
+@layer base {
+  body {
+    background-color: var(--color-bg);
+    color: var(--color-text-main);
+    font-family: var(--font-sans);
+    line-height: 1.6;
+    margin: 0;
+    overflow-x: hidden;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-sans);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+
+  /* Hide cursor on desktop */
+  @media (pointer: fine) {
+    *, *::before, *::after {
+      cursor: none !important;
+    }
+  }
+
+  ::selection {
+    background-color: var(--color-accent);
+    color: white;
+  }
 }
 
+@layer utilities {
+  .noise-bg {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    pointer-events: none;
+    z-index: 50;
+    opacity: 0.04;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+  }
+  
+  .glass-card {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 16px;
+  }
+  
+  .glass-pill {
+    background: rgba(255, 255, 255, 0.03);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border: 1px solid var(--color-border);
+    border-radius: 9999px;
+  }
+}
 
-/* Hide scrollbar for lenis smooth scroll feel */
+/* Custom Scrollbar override if needed, though Lenis handles smooth scrolling */
 ::-webkit-scrollbar {
-  display: none;
+  width: 8px;
 }
+::-webkit-scrollbar-track {
+  background: var(--color-bg);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-surface);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-elevated);
+}
+
 * {
   -ms-overflow-style: none;  /* IE and Edge */
   scrollbar-width: none;  /* Firefox */

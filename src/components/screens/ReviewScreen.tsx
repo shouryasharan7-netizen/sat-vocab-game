@@ -3,7 +3,7 @@ import { useGameStore } from '../../store/useGameStore';
 import { WORDS } from '../../data/words';
 import { Card } from '../ui/Card';
 import { Button, cn } from '../ui/Button';
-import { ArrowLeft, BrainCircuit, Info } from 'lucide-react';
+import { ArrowLeft, BrainCircuit, Info, Clock, AlertCircle } from 'lucide-react';
 
 export function ReviewScreen({ onBack }: { onBack: () => void }) {
   const store = useGameStore();
@@ -36,81 +36,111 @@ export function ReviewScreen({ onBack }: { onBack: () => void }) {
       animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
       exit={{ opacity: 0, scale: 0.98, filter: "blur(10px)" }}
       transition={{ type: "spring", stiffness: 350, damping: 25, mass: 0.5 }}
-      className="max-w-3xl mx-auto w-full px-4 py-8 relative z-10"
+      className="max-w-3xl mx-auto w-full px-4 py-8 relative z-10 min-h-screen"
     >
-      <div className="flex justify-between items-center mb-8">
-        <Button variant="secondary" size="sm" onClick={onBack} className="gap-2">
+      <div className="flex justify-between items-center mb-10">
+        <Button variant="secondary" size="sm" onClick={onBack} className="gap-2 glass-pill text-zinc-300 hover:text-white">
           <ArrowLeft className="w-4 h-4" /> Back to Home
         </Button>
-        <div className="flex items-center gap-2 font-bold text-white text-sm bg-rose-500/10 text-rose-400 px-4 py-2 rounded-xl border border-rose-500/20 shadow-inner">
+        <div className="flex items-center gap-2 font-bold text-sm bg-rose-500/10 text-rose-400 px-4 py-2 rounded-xl border border-rose-500/20 shadow-inner">
           <BrainCircuit className="w-5 h-5" /> Smart Review
         </div>
       </div>
 
       {weakWords.length === 0 ? (
-        <Card className="text-center p-12 py-20 flex flex-col items-center">
-          <div className="w-20 h-20 bg-emerald-500/10 rounded-full flex items-center justify-center mb-6 shadow-inner">
-            <span className="text-4xl text-emerald-400">✨</span>
+        <Card className="text-center p-12 py-20 flex flex-col items-center glass-card">
+          <div className="w-20 h-20 bg-emerald-500/10 rounded-full flex items-center justify-center mb-6 shadow-inner border border-emerald-500/20">
+            <span className="text-4xl">✨</span>
           </div>
           <h2 className="text-2xl font-bold text-white mb-2">You're all caught up!</h2>
-          <p className="text-slate-400 max-w-sm">No words are due for review right now. Keep playing other modes to discover new words.</p>
+          <p className="text-zinc-400 max-w-sm font-medium">No words are due for review right now. Keep playing other modes to discover new words.</p>
         </Card>
       ) : (
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-4">
           {weakWords.map(([w, m]) => {
             const wordObj = WORDS.find(x => x.word === w);
             const ratio = m.correct / m.seen;
             const masteryProgress = Math.min(100, (m.correct / 5) * 100);
+            
+            const lastRev = m.lastReviewed || 0;
+            const intervalDays = m.interval || 0;
+            const dueTime = lastRev + (intervalDays * DAY_IN_MS);
+            
+            let srsStatus = 'upcoming'; // default
+            if (now > dueTime + (DAY_IN_MS * 2)) srsStatus = 'overdue';
+            else if (now > dueTime) srsStatus = 'due';
 
             return (
               <motion.div whileHover={{ scale: 1.01 }} key={w}>
-                <Card className="p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 border-slate-800/50 hover:border-slate-700 transition-all shadow-sm hover:shadow-md">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-1">
-                      <div className="font-bold text-slate-100 font-serif text-xl">{w}</div>
+                <Card className={cn(
+                  "p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 transition-all shadow-sm glass-card relative overflow-hidden",
+                  srsStatus === 'overdue' && "border-rose-500/30 bg-rose-500/5 shadow-[0_0_15px_rgba(244,63,94,0.1)]",
+                  srsStatus === 'due' && "border-amber-500/30 bg-amber-500/5 shadow-[0_0_15px_rgba(245,158,11,0.05)]",
+                  srsStatus === 'upcoming' && "border-emerald-500/30 bg-emerald-500/5 hover:border-emerald-500/40"
+                )}>
+                  
+                  {/* Subtle pulsing background for overdue items */}
+                  {srsStatus === 'overdue' && (
+                    <div className="absolute inset-0 bg-rose-500/10 animate-pulse pointer-events-none" />
+                  )}
+
+                  <div className="flex-1 relative z-10">
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className="font-bold text-white font-serif text-2xl">{w}</div>
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
                           store.setSelectedWordForDetail(w);
                         }}
-                        className="p-1 rounded-full hover:bg-slate-800 text-slate-400 hover:text-slate-200 transition-colors"
+                        className="p-1 rounded-full hover:bg-white/10 text-zinc-400 hover:text-white transition-colors"
                         title="View Details"
                       >
-                        <Info className="w-4 h-4" />
+                        <Info className="w-5 h-5" />
                       </button>
-                      {ratio < 0.6 && (
-                        <span className="text-[10px] font-bold uppercase tracking-wider bg-rose-500/10 text-rose-400 px-2 py-0.5 rounded-full border border-rose-500/20">
+                      
+                      {srsStatus === 'overdue' && (
+                        <span className="text-[10px] font-bold uppercase tracking-widest bg-rose-500/10 text-rose-400 px-2 py-1 rounded-md border border-rose-500/20 flex items-center gap-1">
+                          <AlertCircle className="w-3 h-3" /> Overdue
+                        </span>
+                      )}
+                      {srsStatus === 'due' && (
+                        <span className="text-[10px] font-bold uppercase tracking-widest bg-amber-500/10 text-amber-400 px-2 py-1 rounded-md border border-amber-500/20 flex items-center gap-1">
+                          <Clock className="w-3 h-3" /> Due Today
+                        </span>
+                      )}
+                      
+                      {ratio < 0.6 && srsStatus === 'upcoming' && (
+                        <span className="text-[10px] font-bold uppercase tracking-widest bg-zinc-800 text-zinc-300 px-2 py-1 rounded-md border border-zinc-700">
                           Weak
                         </span>
                       )}
                     </div>
-                    <div className="text-sm text-slate-400 leading-relaxed font-serif">{wordObj?.def}</div>
+                    <div className="text-sm text-zinc-400 leading-relaxed font-medium">{wordObj?.def}</div>
                   </div>
 
-                  <div className="flex items-center gap-4 shrink-0">
+                  <div className="flex items-center gap-4 shrink-0 relative z-10">
                     <div className="flex flex-col items-end">
-                      <span className="text-xs text-slate-500 font-semibold uppercase tracking-wider mb-1">Mastery</span>
-                      <div className="flex items-center gap-2">
-                        {/* Word Mastery Ring */}
-                        <div className="relative w-8 h-8 flex items-center justify-center">
+                      <span className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest mb-2">Mastery</span>
+                      <div className="flex items-center gap-3">
+                        <div className="relative w-10 h-10 flex items-center justify-center">
                           <svg className="absolute inset-0 w-full h-full -rotate-90">
-                            <circle cx="16" cy="16" r="14" stroke="currentColor" strokeWidth="3" fill="transparent" className="text-slate-800" />
+                            <circle cx="20" cy="20" r="18" stroke="rgba(255,255,255,0.06)" strokeWidth="3" fill="transparent" />
                             <circle 
-                              cx="16" cy="16" r="14" 
+                              cx="20" cy="20" r="18" 
                               stroke="currentColor" 
                               strokeWidth="3" 
                               fill="transparent" 
-                              strokeDasharray="88"
-                              strokeDashoffset={88 - (88 * masteryProgress) / 100}
+                              strokeDasharray="113"
+                              strokeDashoffset={113 - (113 * masteryProgress) / 100}
                               className={cn(
                                 "transition-all duration-1000",
-                                masteryProgress >= 100 ? "text-emerald-500" : "text-indigo-500"
+                                masteryProgress >= 100 ? "text-emerald-500" : "text-violet-500"
                               )}
                             />
                           </svg>
-                          <span className="text-[10px] font-bold text-white z-10">{m.correct}</span>
+                          <span className="text-[11px] font-bold text-white z-10">{m.correct}</span>
                         </div>
-                        <span className="text-sm font-bold text-slate-300">/ 5</span>
+                        <span className="text-xs font-bold text-zinc-500">/ 5</span>
                       </div>
                     </div>
                   </div>
