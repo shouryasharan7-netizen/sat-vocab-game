@@ -42,18 +42,18 @@ I built this with stuff I actually like using:
 ## Screenshots
 
 <div align="center">
-  <img src="screenshots/1.png" alt="Home Screen" width="80%" style="margin-bottom: 20px" />
+  <img src="screenshots/1.jpg" alt="Home Screen" width="80%" style="margin-bottom: 20px" />
   
   <br/>
   
-  <img src="screenshots/2.png" alt="Definition Match" width="45%" />
-  <img src="screenshots/3.png" alt="Word Details" width="45%" />
+  <img src="screenshots/2.jpg" alt="Definition Match" width="45%" />
+  <img src="screenshots/3.jpg" alt="Word Details" width="45%" />
   
   <br/>
   <br/>
 
-  <img src="screenshots/4.png" alt="Contrast Match" width="45%" />
-  <img src="screenshots/5.png" alt="Smart Review" width="45%" />
+  <img src="screenshots/4.jpg" alt="Contrast Match" width="45%" />
+  <img src="screenshots/5.jpg" alt="Smart Review" width="45%" />
 </div>
 
 ## Getting Started
