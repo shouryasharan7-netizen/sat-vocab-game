@@ -23,7 +23,7 @@ const item: Variants = {
 };
 
 interface HomeScreenProps {
-  onStartGame: (mode: string) => void;
+  onStartGame: (mode: string, filter?: string) => void;
   onShowReview: () => void;
 }
 
@@ -41,8 +41,12 @@ const ACHIEVEMENT_ICONS: Record<string, React.ReactNode> = {
 };
 
 export function HomeScreen({ onStartGame, onShowReview }: HomeScreenProps) {
-  const { level, xp, streak, lostStreak, achievements, recoverStreak } = useGameStore();
+  const { level, xp, streak, lostStreak, achievements, recoverStreak, dailyProgress, lastDailyDate } = useGameStore();
   const [filter, setFilter] = useState<'All' | 'Common' | 'Advanced' | 'Obscure'>('All');
+
+  const today = new Date().toISOString().split('T')[0];
+  const isDailyDone = lastDailyDate === today && dailyProgress >= 10;
+  const displayDailyProgress = lastDailyDate === today ? dailyProgress : 0;
 
   const neededXP = level * 100;
   const prevXP = (level - 1) * 100;
@@ -58,23 +62,35 @@ export function HomeScreen({ onStartGame, onShowReview }: HomeScreenProps) {
     >
       {/* Daily Quest Banner */}
       <motion.div variants={item} className="mb-8">
-        <div className="bg-gradient-to-r from-indigo-500/10 to-violet-500/10 border border-indigo-500/20 rounded-2xl p-4 flex items-center justify-between shadow-lg shadow-indigo-500/5 backdrop-blur-sm">
+        <div className="bg-gradient-to-r from-indigo-500/10 to-violet-500/10 border border-indigo-500/20 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between shadow-lg shadow-indigo-500/5 backdrop-blur-sm gap-4">
           <div className="flex items-center gap-4">
-            <div className="bg-indigo-500/20 p-2 rounded-xl">
-              <Flag className="w-6 h-6 text-indigo-400" />
+            <div className={cn("p-2 rounded-xl", isDailyDone ? "bg-emerald-500/20" : "bg-indigo-500/20")}>
+              {isDailyDone ? <CheckCircle className="w-6 h-6 text-emerald-400" /> : <Flag className="w-6 h-6 text-indigo-400" />}
             </div>
             <div>
               <h2 className="font-bold text-white text-lg">Daily Quest</h2>
-              <p className="text-sm text-slate-400">Complete 10 words today</p>
+              <p className="text-sm text-slate-400">{isDailyDone ? 'Quest complete! Check back tomorrow.' : 'Complete 10 words today'}</p>
             </div>
           </div>
-          <div className="flex items-center gap-3">
-            <div className="w-24 h-2 bg-slate-800 rounded-full overflow-hidden hidden sm:block">
-              <div className="h-full bg-emerald-500 w-[30%]" />
+          <div className="flex items-center gap-3 self-end sm:self-auto w-full sm:w-auto justify-end">
+            <div className="flex-1 sm:w-24 h-2 bg-slate-800 rounded-full overflow-hidden block">
+              <motion.div 
+                className="h-full bg-emerald-500" 
+                initial={{ width: 0 }}
+                animate={{ width: `${(displayDailyProgress / 10) * 100}%` }}
+                transition={{ duration: 1, type: "spring" }}
+              />
             </div>
-            <span className="text-sm font-bold text-emerald-400">3/10</span>
-            <button className="bg-indigo-600 hover:bg-indigo-500 text-white p-2 rounded-xl transition-all shadow-md active:scale-95">
-              <ChevronRight className="w-5 h-5" />
+            <span className="text-sm font-bold text-emerald-400 w-8">{displayDailyProgress}/10</span>
+            <button 
+              onClick={() => { if (!isDailyDone) onStartGame('daily', filter); }}
+              disabled={isDailyDone}
+              className={cn(
+                "p-2 rounded-xl transition-all shadow-md active:scale-95",
+                isDailyDone ? "bg-emerald-500/20 text-emerald-500 cursor-not-allowed" : "bg-indigo-600 hover:bg-indigo-500 text-white"
+              )}
+            >
+              {isDailyDone ? <CheckCircle className="w-5 h-5" /> : <ChevronRight className="w-5 h-5" />}
             </button>
           </div>
         </div>
@@ -163,14 +179,14 @@ export function HomeScreen({ onStartGame, onShowReview }: HomeScreenProps) {
         ))}
       </motion.div>
 
-      {/* Game Modes Grid */}
+      {/* Modes Grid */}
       <motion.div variants={item} className="grid grid-cols-1 md:grid-cols-12 gap-4 mb-12">
-        {/* Primary Modes */}
+        {/* Definition Match */}
         <motion.div 
-          whileHover={{ y: -4, scale: 1.01 }}
+          whileHover={{ y: -4, scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
           className="md:col-span-8 group cursor-pointer"
-          onClick={() => onStartGame('quiz')}
+          onClick={() => onStartGame('quiz', filter)}
         >
           <div className="h-full bg-gradient-to-br from-indigo-500/10 to-transparent border border-indigo-500/20 rounded-3xl p-6 transition-all group-hover:shadow-lg group-hover:shadow-indigo-500/10 group-hover:border-indigo-500/40 relative overflow-hidden">
             <div className="absolute top-0 right-0 -mt-8 -mr-8 w-32 h-32 bg-indigo-500/10 rounded-full blur-2xl group-hover:bg-indigo-500/20 transition-all" />
@@ -190,7 +206,7 @@ export function HomeScreen({ onStartGame, onShowReview }: HomeScreenProps) {
           whileHover={{ y: -4, scale: 1.01 }}
           whileTap={{ scale: 0.98 }}
           className="md:col-span-4 group cursor-pointer"
-          onClick={() => onStartGame('context')}
+          onClick={() => onStartGame('context', filter)}
         >
           <div className="h-full bg-gradient-to-br from-emerald-500/10 to-transparent border border-emerald-500/20 rounded-3xl p-6 transition-all group-hover:shadow-lg group-hover:shadow-emerald-500/10 group-hover:border-emerald-500/40 relative overflow-hidden">
             <div className="absolute top-0 right-0 -mt-8 -mr-8 w-32 h-32 bg-emerald-500/10 rounded-full blur-2xl group-hover:bg-emerald-500/20 transition-all" />
@@ -202,12 +218,12 @@ export function HomeScreen({ onStartGame, onShowReview }: HomeScreenProps) {
           </div>
         </motion.div>
 
-        {/* Secondary Modes */}
+        {/* Speed Run */}
         <motion.div 
           whileHover={{ y: -4, scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
-          className="md:col-span-6 group cursor-pointer"
-          onClick={() => onStartGame('speed')}
+          className="md:col-span-4 group cursor-pointer"
+          onClick={() => onStartGame('speed', filter)}
         >
           <div className="h-full bg-gradient-to-br from-amber-500/5 to-transparent border border-slate-800 rounded-3xl p-5 transition-all group-hover:border-amber-500/30">
             <div className="flex items-center gap-4">
@@ -226,7 +242,7 @@ export function HomeScreen({ onStartGame, onShowReview }: HomeScreenProps) {
           whileHover={{ y: -4, scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
           className="md:col-span-6 group cursor-pointer"
-          onClick={() => onStartGame('flashcard')}
+          onClick={() => onStartGame('flashcard', filter)}
         >
           <div className="h-full bg-gradient-to-br from-pink-500/5 to-transparent border border-slate-800 rounded-3xl p-5 transition-all group-hover:border-pink-500/30">
             <div className="flex items-center gap-4">
@@ -246,7 +262,7 @@ export function HomeScreen({ onStartGame, onShowReview }: HomeScreenProps) {
           whileHover={{ y: -4, scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
           className="md:col-span-6 group cursor-pointer"
-          onClick={() => onStartGame('contrast')}
+          onClick={() => onStartGame('contrast', filter)}
         >
           <div className="h-full bg-gradient-to-br from-cyan-500/5 to-transparent border border-slate-800 rounded-3xl p-5 transition-all group-hover:border-cyan-500/30">
             <div className="flex items-center gap-4">

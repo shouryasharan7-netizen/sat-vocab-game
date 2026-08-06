@@ -8,11 +8,12 @@ import { ArrowLeft, Flame, Star, ListChecks, Info } from 'lucide-react';
 
 interface GameScreenProps {
   mode: string;
+  difficultyFilter?: string;
   onQuit: () => void;
   onEndGame: (score: number, total: number, wrongWords: string[]) => void;
 }
 
-export function GameScreen({ mode, onQuit, onEndGame }: GameScreenProps) {
+export function GameScreen({ mode, difficultyFilter = 'All', onQuit, onEndGame }: GameScreenProps) {
   const store = useGameStore();
   const [questions, setQuestions] = useState<Word[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -40,6 +41,16 @@ export function GameScreen({ mode, onQuit, onEndGame }: GameScreenProps) {
     // Generate questions
     const getWeightedWords = (count: number) => {
       let pool = [...WORDS];
+      
+      if (difficultyFilter !== 'All') {
+        pool = pool.filter(w => {
+          const len = w.word.length;
+          const diff = len <= 5 ? 'Common' : len >= 9 ? 'Obscure' : 'Advanced';
+          return diff === difficultyFilter;
+        });
+        if (pool.length === 0) pool = [...WORDS]; // fallback
+      }
+
       if (mode === 'contrast') {
         pool = pool.filter(w => w.synonyms && w.synonyms.length > 0 && w.antonyms && w.antonyms.length > 0);
       }
@@ -62,6 +73,7 @@ export function GameScreen({ mode, onQuit, onEndGame }: GameScreenProps) {
     let count = 10;
     if (mode === 'speed') count = 50;
     if (mode === 'flashcard') count = 20;
+    if (mode === 'daily') count = 10;
     
     setQuestions(getWeightedWords(count));
     store.resetStreak();
@@ -135,6 +147,8 @@ export function GameScreen({ mode, onQuit, onEndGame }: GameScreenProps) {
     const xp = mode === 'speed' ? 5 : 10 + (store.streak > 3 ? 5 : 0);
     store.addXP(xp);
     
+    if (mode === 'daily') store.incrementDaily();
+    
     setFeedback({ correct: true, text: '✅ Correct! Keep it up!' });
     
     if (!noDelay && mode !== 'flashcard') {
@@ -148,6 +162,8 @@ export function GameScreen({ mode, onQuit, onEndGame }: GameScreenProps) {
     store.resetStreak();
     store.recordAnswer(word, false);
     setWrongWords(prev => [...prev, word]);
+    
+    if (mode === 'daily') store.incrementDaily();
     
     setFeedback({ correct: false, text: `❌ The answer was: ${actualWord.word} — ${actualWord.def}` });
     

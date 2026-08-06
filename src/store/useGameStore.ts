@@ -15,6 +15,8 @@ interface GameState {
   streak: number;
   bestStreak: number;
   lostStreak: number;
+  dailyProgress: number;
+  lastDailyDate: string;
   totalCorrect: number;
   totalAnswered: number;
   wordMastery: Record<string, WordMastery>;
@@ -28,6 +30,7 @@ interface GameState {
   recoverStreak: () => void;
   incrementStreak: () => void;
   recordAnswer: (word: string, isCorrect: boolean) => void;
+  incrementDaily: () => void;
   unlockAchievement: (id: string) => void;
   checkAchievements: () => string[]; // returns newly unlocked achievement IDs
   clearConfetti: () => void;
@@ -51,6 +54,8 @@ export const useGameStore = create<GameState>()(
       streak: 0,
       bestStreak: 0,
       lostStreak: 0,
+      dailyProgress: 0,
+      lastDailyDate: new Date().toISOString().split('T')[0],
       totalCorrect: 0,
       totalAnswered: 0,
       wordMastery: {},
@@ -107,10 +112,19 @@ export const useGameStore = create<GameState>()(
           confettiWord = word;
         }
 
+        const today = new Date().toISOString().split('T')[0];
+        const isNewDay = state.lastDailyDate !== today;
+        let newDailyProgress = isNewDay ? 0 : state.dailyProgress;
+        
+        // We will increment daily progress directly from GameScreen or here if we pass mode.
+        // Wait, recordAnswer doesn't know the mode. We can add an incrementDaily action instead.
+
         return {
           totalAnswered: state.totalAnswered + 1,
           totalCorrect: state.totalCorrect + (isCorrect ? 1 : 0),
           showConfettiFor: confettiWord,
+          lastDailyDate: today,
+          dailyProgress: newDailyProgress,
           wordMastery: {
             ...state.wordMastery,
             [word]: {
@@ -126,6 +140,15 @@ export const useGameStore = create<GameState>()(
       
       clearConfetti: () => set({ showConfettiFor: null }),
       
+      incrementDaily: () => set((state) => {
+        const today = new Date().toISOString().split('T')[0];
+        const isNewDay = state.lastDailyDate !== today;
+        return {
+          lastDailyDate: today,
+          dailyProgress: isNewDay ? 1 : Math.min(10, state.dailyProgress + 1)
+        };
+      }),
+
       setSelectedWordForDetail: (word) => set({ selectedWordForDetail: word }),
       
       unlockAchievement: (id) => set((state) => {

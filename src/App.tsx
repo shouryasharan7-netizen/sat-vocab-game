@@ -14,6 +14,7 @@ import { WORDS } from './data/words';
 function App() {
   const [screen, setScreen] = useState<'home' | 'game' | 'results' | 'review'>('home');
   const [mode, setMode] = useState<string>('');
+  const [filter, setFilter] = useState<string>('All');
   
   const store = useGameStore();
   const selectedWord = WORDS.find(w => w.word === store.selectedWordForDetail) || null;
@@ -22,11 +23,6 @@ function App() {
   const [score, setScore] = useState(0);
   const [total, setTotal] = useState(0);
   const [wrongWords, setWrongWords] = useState<string[]>([]);
-
-  const handleStartGame = (selectedMode: string) => {
-    setMode(selectedMode);
-    setScreen('game');
-  };
 
   const handleEndGame = (finalScore: number, finalTotal: number, finalWrong: string[]) => {
     setScore(finalScore);
@@ -44,7 +40,11 @@ function App() {
           {screen === 'home' && (
             <HomeScreen 
               key="home" 
-              onStartGame={handleStartGame} 
+              onStartGame={(m, f = 'All') => {
+                setMode(m);
+                setFilter(f);
+                setScreen('game');
+              }} 
               onShowReview={() => setScreen('review')} 
             />
           )}
@@ -53,6 +53,7 @@ function App() {
             <GameScreen 
               key="game" 
               mode={mode} 
+              difficultyFilter={filter}
               onQuit={() => setScreen('home')} 
               onEndGame={handleEndGame} 
             />
