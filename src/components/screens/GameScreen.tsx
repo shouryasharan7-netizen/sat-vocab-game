@@ -45,7 +45,9 @@ export function GameScreen({ mode, difficultyFilter = 'All', onQuit, onEndGame }
       if (difficultyFilter !== 'All') {
         pool = pool.filter(w => {
           const len = w.word.length;
-          const diff = len <= 5 ? 'Common' : len >= 9 ? 'Obscure' : 'Advanced';
+          // Improved heuristic: Common words are short, Obscure words are very long or contain rare letters like x, z, q
+          const hasRare = /[qzx]/i.test(w.word);
+          const diff = len <= 6 && !hasRare ? 'Common' : (len >= 10 || hasRare) ? 'Obscure' : 'Advanced';
           return diff === difficultyFilter;
         });
         if (pool.length === 0) pool = [...WORDS]; // fallback
@@ -57,8 +59,9 @@ export function GameScreen({ mode, difficultyFilter = 'All', onQuit, onEndGame }
       pool.sort((a, b) => {
         const ma = store.wordMastery[a.word] || { correct: 0, seen: 0 };
         const mb = store.wordMastery[b.word] || { correct: 0, seen: 0 };
-        const scoreA = ma.seen === 0 ? 2 : ma.correct / ma.seen;
-        const scoreB = mb.seen === 0 ? 2 : mb.correct / mb.seen;
+        // Give un-seen words a random high score so they are mixed in
+        const scoreA = ma.seen === 0 ? 2 + Math.random() : (ma.correct / ma.seen);
+        const scoreB = mb.seen === 0 ? 2 + Math.random() : (mb.correct / mb.seen);
         return scoreA - scoreB;
       });
       // Fallback if not enough contrast words
