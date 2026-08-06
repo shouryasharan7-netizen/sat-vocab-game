@@ -41,24 +41,20 @@ I built this with stuff I actually like using:
 
 ## Screenshots
 
-*(Add screenshots here once you deploy. Seriously, a good screenshot is 80% of why someone will star your repo.)*
+<div align="center">
+  <img src="screenshots/1.png" alt="Home Screen" width="80%" style="margin-bottom: 20px" />
+  
+  <br/>
+  
+  <img src="screenshots/2.png" alt="Definition Match" width="45%" />
+  <img src="screenshots/3.png" alt="Word Details" width="45%" />
+  
+  <br/>
+  <br/>
 
-```
-┌─────────────────────────────────────┐
-│  🎯 SAT Vocab Game                  │
-│  Level 4 · 340 XP · 12 day streak   │
-│                                     │
-│  ┌──────────┐  ┌──────────┐        │
-│  │ Definition│  │ Context  │        │
-│  │  Match   │  │  Clues   │        │
-│  └──────────┘  └──────────┘        │
-│  ┌──────────┐  ┌──────────┐        │
-│  │ Speed Run│  │Flashcards│        │
-│  └──────────┘  └──────────┘        │
-└─────────────────────────────────────┘
-```
-
-*Yeah I know, ASCII art. I'll replace this with real screenshots soon. Maybe.*
+  <img src="screenshots/4.png" alt="Contrast Match" width="45%" />
+  <img src="screenshots/5.png" alt="Smart Review" width="45%" />
+</div>
 
 ## Getting Started
 
