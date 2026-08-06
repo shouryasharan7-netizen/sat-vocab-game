@@ -114,7 +114,7 @@ export function HomeScreen({ onStartGame, onShowReview }: HomeScreenProps) {
               <span className="font-bold text-sm hidden sm:inline">Leaderboard</span>
             </button>
           </div>
-          <p className="text-slate-400 text-lg">Master 200+ Digital SAT words through play</p>
+          <p className="text-slate-400 text-lg">Master 1000+ Digital SAT words through play</p>
         </div>
 
         <div className="flex gap-4 items-center bg-slate-900/50 p-3 rounded-3xl border border-slate-800/50 backdrop-blur-md">
