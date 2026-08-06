@@ -133,14 +133,33 @@ export function GameScreen({ mode, difficultyFilter = 'All', onQuit, onEndGame }
       setTimeLeft(prev => {
         if (prev <= 0.1) {
           clearInterval(timer);
-          onEndGame(score, currentIndex, wrongWords);
+          // score and wrongWords are captured in this interval closure, so they might be stale!
+          // We can use a ref for latest values if we need to, or rely on functional updates.
           return 0;
         }
         return prev - 0.1;
       });
     }, 100);
     return () => clearInterval(timer);
-  }, [mode, score, currentIndex, wrongWords]);
+  }, [mode, countdown]);
+
+  // Use refs to get latest state for endgame
+  const scoreRef = useRef(score);
+  const wrongWordsRef = useRef(wrongWords);
+  useEffect(() => { scoreRef.current = score; }, [score]);
+  useEffect(() => { wrongWordsRef.current = wrongWords; }, [wrongWords]);
+
+  useEffect(() => {
+    if (timeLeft === 0 && mode === 'speed') {
+      onEndGame(scoreRef.current, currentIndex, wrongWordsRef.current);
+    }
+  }, [timeLeft]);
+
+  useEffect(() => {
+    if (questions.length > 0 && currentIndex >= questions.length && mode !== 'speed') {
+      onEndGame(scoreRef.current, questions.length, wrongWordsRef.current);
+    }
+  }, [currentIndex, questions.length, mode, onEndGame]);
 
   const handleCorrect = (word: string, noDelay: boolean = false) => {
     store.incrementStreak();
@@ -178,15 +197,11 @@ export function GameScreen({ mode, difficultyFilter = 'All', onQuit, onEndGame }
   };
 
   const nextQuestion = () => {
-    if (currentIndex + 1 >= questions.length && mode !== 'speed') {
-      onEndGame(score, questions.length, wrongWords);
-    } else if (mode === 'speed' && currentIndex + 1 >= questions.length) {
+    if (mode === 'speed' && currentIndex + 1 >= questions.length) {
       // Endless mode for speed
       setQuestions(prev => [...prev, ...WORDS.sort(() => Math.random() - 0.5).slice(0, 10)]);
-      setCurrentIndex(i => i + 1);
-    } else {
-      setCurrentIndex(i => i + 1);
     }
+    setCurrentIndex(i => i + 1);
   };
 
   const onAnswerQuiz = (selected: string) => {
@@ -216,6 +231,8 @@ export function GameScreen({ mode, difficultyFilter = 'All', onQuit, onEndGame }
 
   if (questions.length === 0) return null;
   const q = questions[currentIndex];
+  if (!q) return null; // Wait for onEndGame to trigger
+
 
   const THEMATIC_TAGS = ['SCIENCE & NATURE', 'HISTORY & SOCIETY', 'LITERATURE & ARTS', 'GLOBAL ISSUES', 'ECONOMICS'];
   const thematicTag = mode === 'context' ? THEMATIC_TAGS[currentIndex % THEMATIC_TAGS.length] : null;
