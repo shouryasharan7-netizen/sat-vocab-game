@@ -29,7 +29,7 @@ interface GameState {
   clearConfetti: () => void;
 }
 
-const calculateNextInterval = (correct: number, currentInterval: number = 0, isCorrect: boolean) => {
+const calculateNextInterval = (currentInterval: number = 0, isCorrect: boolean) => {
   if (!isCorrect) return 1; // Reset to 1 day on failure
   if (currentInterval === 0) return 1;
   if (currentInterval === 1) return 3;
@@ -75,7 +75,7 @@ export const useGameStore = create<GameState>()(
         
         const newCorrect = currentMastery.correct + (isCorrect ? 1 : 0);
         const newSeen = currentMastery.seen + 1;
-        const newInterval = calculateNextInterval(newCorrect, currentMastery.interval, isCorrect);
+        const newInterval = calculateNextInterval(currentMastery.interval, isCorrect);
         
         // Trigger confetti if this is the 5th correct answer
         let confettiWord = state.showConfettiFor;

@@ -1,10 +1,9 @@
 import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { useGameStore } from '../../store/useGameStore';
 import { ACHIEVEMENTS } from '../../data/achievements';
-import { Card } from '../ui/Card';
 import { cn } from '../ui/Button';
-import { Flame, Star, Trophy, BookOpen, Zap, Target, ScrollText, CheckCircle, Search, ChevronRight, Moon, Award, Flag, Clock } from 'lucide-react';
+import { Flame, Star, Trophy, BookOpen, Zap, Target, ScrollText, CheckCircle, ChevronRight, Moon, Award, Flag, Clock } from 'lucide-react';
 
 import { type Variants } from 'framer-motion';
 
@@ -42,10 +41,9 @@ const ACHIEVEMENT_ICONS: Record<string, React.ReactNode> = {
 };
 
 export function HomeScreen({ onStartGame, onShowReview }: HomeScreenProps) {
-  const { level, xp, streak, wordMastery, achievements } = useGameStore();
+  const { level, xp, streak, achievements } = useGameStore();
   const [filter, setFilter] = useState<'All' | 'Common' | 'Advanced' | 'Obscure'>('All');
 
-  const mastered = Object.values(wordMastery).filter(m => m.correct >= 3).length;
   const neededXP = level * 100;
   const prevXP = (level - 1) * 100;
   const progress = Math.max(0, Math.min(100, ((xp - prevXP) / (neededXP - prevXP)) * 100));
