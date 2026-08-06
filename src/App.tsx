@@ -4,6 +4,7 @@ import { HomeScreen } from './components/screens/HomeScreen';
 import { GameScreen } from './components/screens/GameScreen';
 import { ResultsScreen } from './components/screens/ResultsScreen';
 import { ReviewScreen } from './components/screens/ReviewScreen';
+import { LeaderboardScreen } from './components/screens/LeaderboardScreen';
 import { SmoothScroll } from './components/ui/SmoothScroll';
 import { CustomCursor } from './components/ui/CustomCursor';
 import { ScrollVelocitySkew } from './components/ui/ScrollVelocitySkew';
@@ -15,7 +16,7 @@ import { WORDS } from './data/words';
 import { auth } from './lib/firebase';
 import { signInAnonymously, onAuthStateChanged } from 'firebase/auth';
 
-type Screen = 'home' | 'game' | 'results' | 'review';
+type Screen = 'home' | 'game' | 'results' | 'review' | 'leaderboard';
 type Mode = 'daily' | 'speed' | 'flashcard' | 'contrast' | 'context' | 'scramble' | null;
 
 export default function App() {
@@ -71,6 +72,7 @@ export default function App() {
                       setScreen('game');
                     }} 
                     onShowReview={() => setScreen('review')} 
+                    onShowLeaderboard={() => setScreen('leaderboard')}
                   />
                 </motion.div>
               )}
@@ -103,6 +105,12 @@ export default function App() {
                   <ReviewScreen
                     onBack={() => setScreen('home')}
                   />
+                </motion.div>
+              )}
+
+              {screen === 'leaderboard' && (
+                <motion.div key="leaderboard" variants={pageVariants} initial="initial" animate="animate" exit="exit" className="flex-1 flex flex-col">
+                  <LeaderboardScreen onBack={() => setScreen('home')} />
                 </motion.div>
               )}
             </AnimatePresence>

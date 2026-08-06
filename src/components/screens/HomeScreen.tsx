@@ -13,9 +13,10 @@ gsap.registerPlugin(ScrollTrigger);
 interface HomeScreenProps {
   onStartGame: (mode: string, filter?: string) => void;
   onShowReview: () => void;
+  onShowLeaderboard: () => void;
 }
 
-export function HomeScreen({ onStartGame, onShowReview }: HomeScreenProps) {
+export function HomeScreen({ onStartGame, onShowReview, onShowLeaderboard }: HomeScreenProps) {
   const { level, xp, streak, dailyProgress, lastDailyDate } = useGameStore();
   const [filter, setFilter] = useState<'All' | 'Common' | 'Advanced' | 'Obscure'>('All');
   
@@ -100,6 +101,12 @@ export function HomeScreen({ onStartGame, onShowReview }: HomeScreenProps) {
           </div>
 
           <div className="flex gap-4 items-center">
+            {/* Leaderboard Button */}
+            <button onClick={onShowLeaderboard} className="flex items-center gap-2 bg-amber-500/10 text-amber-400 px-4 py-2 rounded-xl font-bold hover:bg-amber-500/20 transition-all border border-amber-500/20 shadow-inner group mr-2">
+              <Trophy className="w-4 h-4 group-hover:scale-110 transition-transform" />
+              <span className="hidden md:inline">Leaderboard</span>
+            </button>
+
             {/* Level Badge */}
             <div className="relative w-12 h-12 flex items-center justify-center group">
               <svg className="absolute inset-0 w-full h-full -rotate-90">
