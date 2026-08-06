@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { syncUserToFirebase } from '../lib/firebase';
 
 export interface WordMastery {
   correct: number;
@@ -10,6 +11,8 @@ export interface WordMastery {
 }
 
 interface GameState {
+  uid: string | null;
+  username: string;
   xp: number;
   level: number;
   streak: number;
@@ -25,6 +28,8 @@ interface GameState {
   selectedWordForDetail: string | null;
   
   // Actions
+  setUid: (uid: string) => void;
+  setUsername: (username: string) => void;
   addXP: (amount: number) => void;
   resetStreak: () => void;
   recoverStreak: () => void;
@@ -49,6 +54,8 @@ const calculateNextInterval = (currentInterval: number = 0, isCorrect: boolean) 
 export const useGameStore = create<GameState>()(
   persist(
     (set, get) => ({
+      uid: null,
+      username: `Scholar_${Math.floor(Math.random() * 10000)}`,
       xp: 0,
       level: 1,
       streak: 0,
@@ -63,13 +70,25 @@ export const useGameStore = create<GameState>()(
       showConfettiFor: null,
       selectedWordForDetail: null,
 
+      setUid: (uid) => set({ uid }),
+      
+      setUsername: (username) => {
+        set({ username });
+        const { uid, xp, streak } = get();
+        if (uid) syncUserToFirebase(uid, { username, xp, streak });
+      },
+
       addXP: (amount) => set((state) => {
         const newXp = state.xp + amount;
+        let newLevel = state.level;
         const needed = state.level * 100;
         if (newXp >= needed) {
-          return { xp: newXp, level: state.level + 1 };
+          newLevel = state.level + 1;
         }
-        return { xp: newXp };
+        
+        if (state.uid) syncUserToFirebase(state.uid, { xp: newXp, username: state.username, streak: state.streak });
+        
+        return { xp: newXp, level: newLevel };
       }),
       
       resetStreak: () => set((state) => ({ 
@@ -90,9 +109,13 @@ export const useGameStore = create<GameState>()(
       
       incrementStreak: () => set((state) => {
         const newStreak = state.streak + 1;
+        const bestStreak = Math.max(state.bestStreak, newStreak);
+        
+        if (state.uid) syncUserToFirebase(state.uid, { xp: state.xp, username: state.username, streak: newStreak });
+        
         return { 
           streak: newStreak, 
-          bestStreak: Math.max(state.bestStreak, newStreak) 
+          bestStreak 
         };
       }),
       

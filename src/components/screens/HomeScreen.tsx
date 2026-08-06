@@ -3,7 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useGameStore } from '../../store/useGameStore';
 import { ACHIEVEMENTS } from '../../data/achievements';
 import { cn } from '../ui/Button';
-import { Flame, Star, Trophy, BookOpen, Zap, Target, ScrollText, CheckCircle, ChevronRight, Moon, Award, Flag, Clock, SplitSquareHorizontal } from 'lucide-react';
+import { Flame, Star, Trophy, BookOpen, Zap, Target, ScrollText, CheckCircle, ChevronRight, Moon, Award, Flag, Clock, SplitSquareHorizontal, Users } from 'lucide-react';
+import { LeaderboardModal } from '../ui/LeaderboardModal';
 
 import { type Variants } from 'framer-motion';
 
@@ -43,6 +44,7 @@ const ACHIEVEMENT_ICONS: Record<string, React.ReactNode> = {
 export function HomeScreen({ onStartGame, onShowReview }: HomeScreenProps) {
   const { level, xp, streak, lostStreak, achievements, recoverStreak, dailyProgress, lastDailyDate } = useGameStore();
   const [filter, setFilter] = useState<'All' | 'Common' | 'Advanced' | 'Obscure'>('All');
+  const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(false);
 
   const today = new Date().toISOString().split('T')[0];
   const isDailyDone = lastDailyDate === today && dailyProgress >= 10;
@@ -53,7 +55,8 @@ export function HomeScreen({ onStartGame, onShowReview }: HomeScreenProps) {
   const progress = Math.max(0, Math.min(100, ((xp - prevXP) / (neededXP - prevXP)) * 100));
 
   return (
-    <motion.div 
+    <>
+      <motion.div 
       className="max-w-5xl mx-auto w-full px-4 py-8 relative z-10"
       variants={container}
       initial="hidden"
@@ -99,9 +102,18 @@ export function HomeScreen({ onStartGame, onShowReview }: HomeScreenProps) {
       {/* Header & Stats */}
       <motion.div variants={item} className="flex flex-col md:flex-row gap-6 mb-12 items-center">
         <div className="flex-1">
-          <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight mb-2 text-white">
-            SAT Vocab Quest
-          </h1>
+          <div className="flex items-center gap-4 mb-2">
+            <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight text-white">
+              SAT Vocab Quest
+            </h1>
+            <button 
+              onClick={() => setIsLeaderboardOpen(true)}
+              className="bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 p-2.5 rounded-xl border border-indigo-500/20 transition-all flex items-center gap-2 group"
+            >
+              <Users className="w-5 h-5 group-hover:scale-110 transition-transform" />
+              <span className="font-bold text-sm hidden sm:inline">Leaderboard</span>
+            </button>
+          </div>
           <p className="text-slate-400 text-lg">Master 200+ Digital SAT words through play</p>
         </div>
 
@@ -332,5 +344,10 @@ export function HomeScreen({ onStartGame, onShowReview }: HomeScreenProps) {
         </div>
       </motion.div>
     </motion.div>
+      <LeaderboardModal 
+        isOpen={isLeaderboardOpen} 
+        onClose={() => setIsLeaderboardOpen(false)} 
+      />
+    </>
   );
 }

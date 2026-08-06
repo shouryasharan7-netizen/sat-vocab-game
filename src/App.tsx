@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { Background } from './components/Background';
 import { HomeScreen } from './components/screens/HomeScreen';
@@ -10,6 +10,8 @@ import { WordDetailModal } from './components/ui/WordDetailModal';
 import { InstallPrompt } from './components/ui/InstallPrompt';
 import { useGameStore } from './store/useGameStore';
 import { WORDS } from './data/words';
+import { auth } from './lib/firebase';
+import { signInAnonymously, onAuthStateChanged } from 'firebase/auth';
 
 function App() {
   const [screen, setScreen] = useState<'home' | 'game' | 'results' | 'review'>('home');
@@ -19,6 +21,19 @@ function App() {
   const store = useGameStore();
   const selectedWord = WORDS.find(w => w.word === store.selectedWordForDetail) || null;
   
+  // Initialize Firebase Anonymous Auth
+  useEffect(() => {
+    if (!auth) return;
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        store.setUid(user.uid);
+      } else {
+        signInAnonymously(auth as any).catch(console.error);
+      }
+    });
+    return () => unsubscribe();
+  }, []);
+
   // Results state
   const [score, setScore] = useState(0);
   const [total, setTotal] = useState(0);
