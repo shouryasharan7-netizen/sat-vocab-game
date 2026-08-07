@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
+import { Analytics } from '@vercel/analytics/react';
 import { HomeScreen } from './components/screens/HomeScreen';
 import { GameScreen } from './components/screens/GameScreen';
 import { ResultsScreen } from './components/screens/ResultsScreen';
@@ -57,6 +58,7 @@ export default function App() {
 
   return (
     <div className="relative min-h-screen bg-[#0a0a0a] text-[#fafafa] font-sans selection:bg-violet-500/30 overflow-hidden">
+      <Analytics />
       <CustomCursor />
       
       <SmoothScroll>
