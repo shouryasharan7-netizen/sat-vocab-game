@@ -33,7 +33,12 @@ export function HomeScreen({ onStartGame, onShowLeaderboard, onShowReview }: { o
   const handleGenerateSync = async () => {
     try {
       setSyncError('');
-      const res = await fetch('/api/sync', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'generate', uid: store.uid }) });
+      let currentUid = store.uid;
+      if (!currentUid) {
+        currentUid = crypto.randomUUID();
+        store.setUid(currentUid);
+      }
+      const res = await fetch('/api/sync', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'generate', uid: currentUid }) });
       const data = await res.json();
       if (data.code) setGeneratedCode(data.code);
       else setSyncError(data.error || 'Failed to generate code');
