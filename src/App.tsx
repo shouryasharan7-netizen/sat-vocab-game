@@ -74,7 +74,6 @@ export default function App() {
                     mode={mode}
                     difficultyFilter={filter}
                     onEndGame={handleEndGame}
-                    onQuit={() => setScreen('home')}
                   />
                 </motion.div>
               )}

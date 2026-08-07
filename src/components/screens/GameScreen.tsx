@@ -10,18 +10,18 @@ import { ArrowLeft, Flame, Star, ListChecks } from 'lucide-react';
 interface GameScreenProps {
   mode: string;
   difficultyFilter?: string;
-  onQuit: () => void;
   onEndGame: (score: number, total: number, wrongWords: string[]) => void;
 }
 
-export function GameScreen({ mode, difficultyFilter = 'All', onQuit, onEndGame }: GameScreenProps) {
+export function GameScreen({ mode, difficultyFilter = 'All', onEndGame }: GameScreenProps) {
   const store = useGameStore();
   const [questions, setQuestions] = useState<Word[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [score, setScore] = useState(0);
   const [timeLeft, setTimeLeft] = useState(60);
   const [wrongWords, setWrongWords] = useState<string[]>([]);
-  
+  const [sessionId, setSessionId] = useState<string | null>(null);
+  const sessionXpRef = useRef(0);
   const [countdown, setCountdown] = useState<number | null>(mode === 'speed' ? 3 : null);
   
   const [answered, setAnswered] = useState(false);
@@ -81,8 +81,38 @@ export function GameScreen({ mode, difficultyFilter = 'All', onQuit, onEndGame }
     if (mode === 'flashcard') count = 20;
     if (mode === 'daily') count = 10;
     
-    setQuestions(getWeightedWords(count));
+    if (mode === 'community') {
+      fetch('/api/analytics')
+        .then(res => res.json())
+        .then(data => {
+          if (data.words) {
+            const hardWords = data.words.map((w: any) => WORDS.find(x => x.word === w.word)).filter(Boolean);
+            if (hardWords.length > 0) {
+              setQuestions(hardWords.slice(0, 20));
+              return;
+            }
+          }
+          setQuestions(getWeightedWords(count));
+        })
+        .catch(() => setQuestions(getWeightedWords(count)));
+    } else {
+      setQuestions(getWeightedWords(count));
+    }
+    
     store.resetStreak();
+
+    // Start anti-cheat session
+    fetch('/api/game', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'start', uid: store.uid })
+    })
+      .then(res => res.json())
+      .then(data => {
+        if (data.sessionId) setSessionId(data.sessionId);
+      })
+      .catch(console.error);
+
   }, []);
 
   useEffect(() => {
@@ -149,15 +179,47 @@ export function GameScreen({ mode, difficultyFilter = 'All', onQuit, onEndGame }
 
   useEffect(() => {
     if (timeLeft === 0 && mode === 'speed') {
-      onEndGame(scoreRef.current, currentIndex, wrongWordsRef.current);
+      endGameSession(scoreRef.current, currentIndex, wrongWordsRef.current);
     }
   }, [timeLeft]);
 
   useEffect(() => {
     if (questions.length > 0 && currentIndex >= questions.length && mode !== 'speed') {
-      onEndGame(scoreRef.current, questions.length, wrongWordsRef.current);
+      endGameSession(scoreRef.current, questions.length, wrongWordsRef.current);
     }
-  }, [currentIndex, questions.length, mode, onEndGame]);
+  }, [currentIndex, questions.length, mode]);
+
+  const endGameSession = async (finalScore: number, total: number, mistakes: string[]) => {
+    // 1. Report Analytics
+    if (mistakes.length > 0) {
+      fetch('/api/analytics', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ failedWords: mistakes })
+      }).catch(console.error);
+    }
+
+    // 2. Commit XP securely
+    if (sessionId && sessionXpRef.current > 0) {
+      await fetch('/api/game', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'end',
+          sessionId,
+          uid: store.uid,
+          username: store.username,
+          xpGained: sessionXpRef.current,
+          totalXp: store.xp
+        })
+      }).catch(console.error);
+    }
+
+    // 3. Save cloud state
+    store.syncToCloud();
+
+    onEndGame(finalScore, total, mistakes);
+  };
 
   const triggerConfetti = (e?: React.MouseEvent) => {
     if (e) {
@@ -188,6 +250,7 @@ export function GameScreen({ mode, difficultyFilter = 'All', onQuit, onEndGame }
     
     const xpGain = mode === 'speed' ? 5 : 10 + (store.streak > 3 ? 5 : 0);
     store.addXP(xpGain);
+    sessionXpRef.current += xpGain;
     
     if (mode === 'daily') store.incrementDaily();
     
@@ -296,7 +359,7 @@ export function GameScreen({ mode, difficultyFilter = 'All', onQuit, onEndGame }
       className="max-w-3xl mx-auto w-full px-4 py-8 relative z-10 min-h-screen flex flex-col"
     >
       <div className="flex justify-between items-center mb-8">
-        <Button variant="secondary" size="sm" onClick={onQuit} className="gap-2 glass-pill text-zinc-300 hover:text-white">
+        <Button variant="secondary" size="sm" onClick={() => endGameSession(score, currentIndex, wrongWords)} className="gap-2 glass-pill text-zinc-300 hover:text-white">
           <ArrowLeft className="w-4 h-4" /> Quit
         </Button>
         <div className="flex items-center gap-4 text-sm font-semibold text-zinc-400">

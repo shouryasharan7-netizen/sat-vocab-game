@@ -1,24 +1,24 @@
 import { useState, useEffect, useRef } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { useGameStore } from '../../store/useGameStore';
-import { cn } from '../ui/Button';
-import { Flame, Trophy, BookOpen, Zap, ScrollText, CheckCircle, Brain, RefreshCw } from 'lucide-react';
+import { cn, Button } from '../ui/Button';
+import { Flame, Trophy, BookOpen, Zap, ScrollText, CheckCircle, Brain, RefreshCw, Smartphone } from 'lucide-react';
 import { ParticleNetwork } from '../ui/ParticleNetwork';
 import { TiltCard } from '../ui/TiltCard';
 
 gsap.registerPlugin(ScrollTrigger);
 
-interface HomeScreenProps {
-  onStartGame: (mode: string, filter?: string) => void;
-  onShowReview: () => void;
-  onShowLeaderboard: () => void;
-}
-
-export function HomeScreen({ onStartGame, onShowReview, onShowLeaderboard }: HomeScreenProps) {
-  const { level, xp, streak, dailyProgress, lastDailyDate } = useGameStore();
+export function HomeScreen({ onStartGame, onShowLeaderboard, onShowReview }: { onStartGame: (mode: string, filter: string) => void, onShowLeaderboard: () => void, onShowReview: () => void }) {
+  const store = useGameStore();
+  const { level, xp, streak, dailyProgress, lastDailyDate } = store;
   const [filter, setFilter] = useState<'All' | 'Common' | 'Advanced' | 'Obscure'>('All');
+  
+  const [showSyncModal, setShowSyncModal] = useState(false);
+  const [syncCode, setSyncCode] = useState('');
+  const [generatedCode, setGeneratedCode] = useState<string | null>(null);
+  const [syncError, setSyncError] = useState('');
   
   const today = new Date().toISOString().split('T')[0];
   const isDailyDone = lastDailyDate === today && dailyProgress >= 10;
@@ -29,13 +29,48 @@ export function HomeScreen({ onStartGame, onShowReview, onShowLeaderboard }: Hom
   const progress = Math.max(0, Math.min(100, ((xp - prevXP) / (neededXP - prevXP)) * 100));
 
   const sectionRef = useRef<HTMLDivElement>(null);
+
+  const handleGenerateSync = async () => {
+    try {
+      setSyncError('');
+      const res = await fetch('/api/sync', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'generate', uid: store.uid }) });
+      const data = await res.json();
+      if (data.code) setGeneratedCode(data.code);
+      else setSyncError('Failed to generate code');
+    } catch (e) {
+      setSyncError('Network error');
+    }
+  };
+
+  const handleConsumeSync = async () => {
+    if (syncCode.length !== 6) return;
+    try {
+      setSyncError('');
+      const res = await fetch('/api/sync', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'consume', code: syncCode }) });
+      const data = await res.json();
+      
+      if (data.targetUid) {
+        store.setUid(data.targetUid);
+        const success = await store.loadFromCloud(data.targetUid);
+        if (success) {
+          setShowSyncModal(false);
+          setSyncCode('');
+          alert('Device successfully linked! Save data loaded.');
+        } else {
+          setSyncError('Linked, but failed to load save data.');
+        }
+      } else {
+        setSyncError(data.error || 'Invalid code');
+      }
+    } catch (e) {
+      setSyncError('Network error');
+    }
+  };
   
-  // Hero Stats Counter
   const xpRef = useRef<HTMLSpanElement>(null);
   const streakRef = useRef<HTMLSpanElement>(null);
   
   useEffect(() => {
-    // Number counter animation for HUD
     if (xpRef.current) {
       gsap.fromTo(xpRef.current, { innerHTML: prevXP }, { innerHTML: xp, duration: 2, ease: 'expo.out', snap: { innerHTML: 1 } });
     }
@@ -45,7 +80,6 @@ export function HomeScreen({ onStartGame, onShowReview, onShowLeaderboard }: Hom
   }, [xp, prevXP, streak]);
 
   useEffect(() => {
-    // ScrollTrigger stagger for cards
     if (sectionRef.current) {
       const cards = sectionRef.current.querySelectorAll('.stagger-card');
       gsap.fromTo(cards, 
@@ -69,7 +103,6 @@ export function HomeScreen({ onStartGame, onShowReview, onShowLeaderboard }: Hom
     <>
       <ParticleNetwork />
       
-      {/* Daily Quest Banner */}
       <div className={cn(
         "w-full h-14 border-b flex items-center justify-center px-4 transition-colors z-20 relative",
         isDailyDone ? "border-emerald-500/20 bg-gradient-to-b from-emerald-500/5 to-transparent" : "border-violet-500/10 bg-gradient-to-b from-violet-500/5 to-transparent"
@@ -92,8 +125,6 @@ export function HomeScreen({ onStartGame, onShowReview, onShowLeaderboard }: Hom
       </div>
 
       <div className="max-w-5xl mx-auto w-full px-4 py-24 relative z-10">
-        
-        {/* HUD Hero */}
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-24 gap-8">
           <div>
             <h1 className="text-4xl md:text-6xl font-bold tracking-tight text-white mb-2">SAT Vocab Quest</h1>
@@ -101,13 +132,15 @@ export function HomeScreen({ onStartGame, onShowReview, onShowLeaderboard }: Hom
           </div>
 
           <div className="flex gap-4 items-center">
-            {/* Leaderboard Button */}
-            <button onClick={onShowLeaderboard} className="flex items-center gap-2 bg-amber-500/10 text-amber-400 px-4 py-2 rounded-xl font-bold hover:bg-amber-500/20 transition-all border border-amber-500/20 shadow-inner group mr-2">
-              <Trophy className="w-4 h-4 group-hover:scale-110 transition-transform" />
-              <span className="hidden md:inline">Leaderboard</span>
-            </button>
+            <Button variant="secondary" className="glass-pill gap-2 hidden md:flex" onClick={() => setShowSyncModal(true)}>
+              <Smartphone className="w-4 h-4 text-emerald-400" />
+              Link Device
+            </Button>
+            <Button variant="secondary" className="glass-pill gap-2" onClick={onShowLeaderboard}>
+              <Trophy className="w-4 h-4 text-amber-400" />
+              Leaderboard
+            </Button>
 
-            {/* Level Badge */}
             <div className="relative w-12 h-12 flex items-center justify-center group">
               <svg className="absolute inset-0 w-full h-full -rotate-90">
                 <circle cx="24" cy="24" r="22" stroke="rgba(255,255,255,0.06)" strokeWidth="3" fill="transparent" />
@@ -132,13 +165,11 @@ export function HomeScreen({ onStartGame, onShowReview, onShowLeaderboard }: Hom
               </div>
             </div>
 
-            {/* XP Pill */}
             <div className="glass-pill px-4 py-2 flex items-center gap-2 group hover:border-white/10 hover:scale-105 transition-all">
               <div className="text-zinc-500 text-xs font-medium uppercase tracking-widest">XP</div>
               <span ref={xpRef} className="font-mono text-white text-base font-medium tabular-nums">{xp}</span>
             </div>
 
-            {/* Streak Pill */}
             <div className="glass-pill px-4 py-2 flex items-center gap-2 group hover:border-white/10 hover:scale-105 transition-all">
               <Flame className="w-4 h-4 text-amber-500 animate-pulse drop-shadow-[0_0_8px_rgba(245,158,11,0.5)]" />
               <span ref={streakRef} className="font-mono text-white text-base font-medium tabular-nums">{streak}</span>
@@ -146,7 +177,6 @@ export function HomeScreen({ onStartGame, onShowReview, onShowLeaderboard }: Hom
           </div>
         </div>
 
-        {/* Filter Toggle */}
         <div className="mb-8 flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
           {['All', 'Common', 'Advanced', 'Obscure'].map(f => (
             <button 
@@ -164,9 +194,7 @@ export function HomeScreen({ onStartGame, onShowReview, onShowLeaderboard }: Hom
           ))}
         </div>
 
-        {/* Modes Grid */}
         <div ref={sectionRef} className="grid grid-cols-1 md:grid-cols-12 gap-4">
-          
           <div className="stagger-card md:col-span-8 min-h-[220px] h-full">
             <TiltCard accentColor="emerald" onClick={() => onStartGame('quiz', filter)}>
               <div className="p-6 h-full flex flex-col justify-between">
@@ -175,7 +203,7 @@ export function HomeScreen({ onStartGame, onShowReview, onShowLeaderboard }: Hom
                 </div>
                 <div>
                   <h3 className="font-bold text-2xl text-white mb-2">Definition Match</h3>
-                  <p className="text-xs text-zinc-500 line-clamp-2">Master precise meanings through rapid-fire multiple choice. The foundational SAT skill.</p>
+                  <p className="text-xs text-zinc-500 line-clamp-2">Master precise meanings through rapid-fire multiple choice.</p>
                 </div>
               </div>
             </TiltCard>
@@ -237,6 +265,22 @@ export function HomeScreen({ onStartGame, onShowReview, onShowLeaderboard }: Hom
             </TiltCard>
           </div>
 
+          <div className="stagger-card md:col-span-12 min-h-[160px]">
+            <TiltCard accentColor="red" onClick={() => onStartGame('community', filter)}>
+              <div className="p-6 h-full flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+                <div className="flex gap-6 items-center">
+                  <div className="w-16 h-16 rounded-2xl bg-red-500/10 border border-red-500/20 flex shrink-0 items-center justify-center text-red-400">
+                    <Flame className="w-8 h-8 stroke-[1.5]" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-2xl text-white mb-2">Community Hardest</h3>
+                    <p className="text-sm text-zinc-500 max-w-md">Test yourself against the top 50 most failed words globally.</p>
+                  </div>
+                </div>
+              </div>
+            </TiltCard>
+          </div>
+
           <div className="stagger-card md:col-span-12 h-[200px]">
             <TiltCard accentColor="red" onClick={onShowReview}>
               <div className="p-6 h-full flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
@@ -255,6 +299,58 @@ export function HomeScreen({ onStartGame, onShowReview, onShowLeaderboard }: Hom
 
         </div>
       </div>
+
+      <AnimatePresence>
+        {showSyncModal && (
+          <motion.div 
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+          >
+            <motion.div 
+              initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }}
+              className="bg-[#141414] border border-white/10 rounded-2xl p-8 max-w-md w-full shadow-2xl relative"
+            >
+              <button onClick={() => setShowSyncModal(false)} className="absolute top-4 right-4 text-zinc-500 hover:text-white">&times;</button>
+              
+              <h2 className="text-2xl font-bold text-white mb-2">Link Devices</h2>
+              <p className="text-zinc-400 text-sm mb-8">Play seamlessly across your phone and computer without making an account.</p>
+
+              <div className="space-y-6">
+                <div className="bg-white/5 border border-white/10 rounded-xl p-4">
+                  <h3 className="text-sm font-bold text-emerald-400 mb-2">Step 1: Generate Code</h3>
+                  <p className="text-xs text-zinc-500 mb-4">Click below to generate a sync code on your main device.</p>
+                  {generatedCode ? (
+                    <div className="text-center py-3 bg-black/40 rounded-lg text-3xl font-mono tracking-[0.5em] font-bold text-white">
+                      {generatedCode}
+                    </div>
+                  ) : (
+                    <Button variant="secondary" className="w-full text-sm" onClick={handleGenerateSync}>Generate Sync Code</Button>
+                  )}
+                </div>
+
+                <div className="text-center text-zinc-600 text-xs font-bold uppercase">OR</div>
+
+                <div className="bg-white/5 border border-white/10 rounded-xl p-4">
+                  <h3 className="text-sm font-bold text-indigo-400 mb-2">Step 2: Enter Code</h3>
+                  <p className="text-xs text-zinc-500 mb-4">Enter a code from your other device to link this one to it.</p>
+                  <div className="flex gap-2">
+                    <input 
+                      type="text" 
+                      placeholder="123456"
+                      maxLength={6}
+                      value={syncCode}
+                      onChange={(e) => setSyncCode(e.target.value.replace(/[^0-9]/g, ''))}
+                      className="w-full bg-black/40 border border-white/10 rounded-lg px-4 font-mono tracking-widest text-center focus:outline-none focus:border-indigo-500 text-white"
+                    />
+                    <Button variant="primary" onClick={handleConsumeSync} disabled={syncCode.length !== 6}>Link</Button>
+                  </div>
+                  {syncError && <p className="text-xs text-rose-500 mt-2">{syncError}</p>}
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </>
   );
 }

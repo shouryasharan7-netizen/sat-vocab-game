@@ -19,11 +19,12 @@ export function LeaderboardScreen({ onBack }: { onBack: () => void }) {
   
   const [isEditingName, setIsEditingName] = useState(false);
   const [editNameValue, setEditNameValue] = useState(store.username);
+  const [timeframe, setTimeframe] = useState<'all' | 'weekly' | 'daily'>('all');
 
   const fetchLeaderboard = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/leaderboard');
+      const res = await fetch(`/api/leaderboard?timeframe=${timeframe}`);
       if (res.ok) {
         const data = await res.json();
         setPlayers(data.players || []);
@@ -36,7 +37,7 @@ export function LeaderboardScreen({ onBack }: { onBack: () => void }) {
 
   useEffect(() => {
     fetchLeaderboard();
-  }, [fetchLeaderboard]);
+  }, [fetchLeaderboard, timeframe]);
 
   const handleSaveName = () => {
     if (editNameValue.trim() && editNameValue !== store.username) {
@@ -116,6 +117,20 @@ export function LeaderboardScreen({ onBack }: { onBack: () => void }) {
           <Card className="p-2 md:p-6 glass-card">
             <div className="flex justify-between items-center mb-6 px-4">
               <h3 className="text-sm font-bold text-zinc-500 uppercase tracking-widest">Top Players</h3>
+              <div className="flex bg-black/40 rounded-lg p-1 gap-1 border border-white/10">
+                {(['all', 'weekly', 'daily'] as const).map(tf => (
+                  <button 
+                    key={tf}
+                    onClick={() => setTimeframe(tf)}
+                    className={cn(
+                      "px-3 py-1.5 text-xs font-bold rounded-md capitalize transition-colors",
+                      timeframe === tf ? "bg-indigo-500 text-white" : "text-zinc-500 hover:text-zinc-300"
+                    )}
+                  >
+                    {tf === 'all' ? 'All Time' : tf}
+                  </button>
+                ))}
+              </div>
               <button 
                 onClick={fetchLeaderboard} 
                 disabled={loading}

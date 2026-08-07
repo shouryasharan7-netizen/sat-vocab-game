@@ -2,17 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { v4 as uuidv4 } from 'uuid';
 
-const syncUserToKV = async (uid: string, username: string, xp: number) => {
-  try {
-    await fetch('/api/leaderboard', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ uid, username, xp })
-    });
-  } catch (err) {
-    console.error("Error syncing to KV:", err);
-  }
-};
+
 
 export interface WordMastery {
   correct: number;
@@ -52,6 +42,9 @@ interface GameState {
   checkAchievements: () => string[]; // returns newly unlocked achievement IDs
   clearConfetti: () => void;
   setSelectedWordForDetail: (word: string | null) => void;
+  hydrateState: (state: Partial<GameState>) => void;
+  syncToCloud: () => Promise<void>;
+  loadFromCloud: (targetUid: string) => Promise<boolean>;
 }
 
 const calculateNextInterval = (currentInterval: number = 0, isCorrect: boolean) => {
@@ -86,8 +79,6 @@ export const useGameStore = create<GameState>()(
       
       setUsername: (username) => {
         set({ username });
-        const { uid, xp } = get();
-        if (uid) syncUserToKV(uid, username, xp);
       },
 
       addXP: (amount) => set((state) => {
@@ -97,8 +88,6 @@ export const useGameStore = create<GameState>()(
         if (newXp >= needed) {
           newLevel = state.level + 1;
         }
-        
-        if (state.uid) syncUserToKV(state.uid, state.username, newXp);
         
         return { xp: newXp, level: newLevel };
       }),
@@ -122,8 +111,6 @@ export const useGameStore = create<GameState>()(
       incrementStreak: () => set((state) => {
         const newStreak = state.streak + 1;
         const bestStreak = Math.max(state.bestStreak, newStreak);
-        
-        if (state.uid) syncUserToKV(state.uid, state.username, state.xp);
         
         return { 
           streak: newStreak, 
@@ -185,6 +172,40 @@ export const useGameStore = create<GameState>()(
       }),
 
       setSelectedWordForDetail: (word) => set({ selectedWordForDetail: word }),
+
+      hydrateState: (newState) => set((state) => ({ ...state, ...newState })),
+
+      syncToCloud: async () => {
+        const state = get();
+        if (!state.uid) return;
+        try {
+          await fetch('/api/save', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ uid: state.uid, state })
+          });
+        } catch (e) {
+          console.error("Cloud save failed:", e);
+        }
+      },
+
+      loadFromCloud: async (targetUid) => {
+        try {
+          const res = await fetch(`/api/save?uid=${targetUid}`);
+          if (res.ok) {
+            const { data } = await res.json();
+            if (data) {
+              const parsed = typeof data === 'string' ? JSON.parse(data) : data;
+              get().hydrateState(parsed);
+              return true;
+            }
+          }
+          return false;
+        } catch (e) {
+          console.error("Cloud load failed:", e);
+          return false;
+        }
+      },
       
       unlockAchievement: (id) => set((state) => {
         if (!state.achievements.includes(id)) {
