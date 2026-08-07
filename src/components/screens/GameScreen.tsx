@@ -510,17 +510,35 @@ export function GameScreen({ mode, difficultyFilter = 'All', onEndGame }: GameSc
                 {/* Answer Options */}
                 {mode === 'scramble' ? (
                   <div className="flex flex-col gap-4 max-w-md mx-auto">
-                    <input
-                      ref={scrambleInputRef}
-                      type="text"
-                      value={scrambleInput}
-                      onChange={(e) => setScrambleInput(e.target.value)}
-                      onKeyDown={(e) => e.key === 'Enter' && onScrambleSubmit()}
-                      placeholder="Type the word..."
-                      className="w-full bg-[#141414] border border-white/10 rounded-2xl p-6 text-center text-2xl font-mono tracking-widest text-white placeholder:text-zinc-700 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all"
-                      disabled={answered}
-                    />
-                    <Button variant="primary" size="lg" onClick={onScrambleSubmit} disabled={answered} className="h-16 text-lg rounded-2xl shadow-[0_0_20px_rgba(79,70,229,0.2)]">Submit Answer</Button>
+                    <div className="relative">
+                      <input
+                        ref={scrambleInputRef}
+                        type="text"
+                        value={scrambleInput}
+                        onChange={(e) => setScrambleInput(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && onScrambleSubmit()}
+                        placeholder="Type the word..."
+                        className={cn(
+                          "w-full bg-[#141414] border-2 rounded-2xl p-6 text-center text-2xl font-mono tracking-widest text-white placeholder:text-zinc-700 focus:outline-none transition-all",
+                          answered 
+                            ? scrambleInput.trim().toLowerCase() === q.word.toLowerCase()
+                              ? "border-emerald-500 text-emerald-400 bg-emerald-500/10"
+                              : "border-rose-500 text-rose-400 bg-rose-500/10"
+                            : "border-white/10 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20"
+                        )}
+                        disabled={answered}
+                      />
+                      {answered && scrambleInput.trim().toLowerCase() !== q.word.toLowerCase() && (
+                        <motion.div 
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          className="absolute -bottom-10 left-0 right-0 text-center font-mono font-bold text-emerald-400 text-lg tracking-widest"
+                        >
+                          {q.word}
+                        </motion.div>
+                      )}
+                    </div>
+                    <Button variant="primary" size="lg" onClick={onScrambleSubmit} disabled={answered} className={cn("h-16 text-lg rounded-2xl shadow-[0_0_20px_rgba(79,70,229,0.2)] mt-4", answered && "opacity-0")}>Submit Answer</Button>
                   </div>
                 ) : mode === 'contrast' ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-2xl mx-auto">
