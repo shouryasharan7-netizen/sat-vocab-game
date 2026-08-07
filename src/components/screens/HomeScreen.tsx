@@ -167,7 +167,7 @@ export function HomeScreen({ onStartGame, onShowReview, onShowLeaderboard }: Hom
         {/* Modes Grid */}
         <div ref={sectionRef} className="grid grid-cols-1 md:grid-cols-12 gap-4">
           
-          <div className="stagger-card md:col-span-8 aspect-[16/9] md:aspect-[4/3] max-h-[300px]">
+          <div className="stagger-card md:col-span-8 min-h-[220px] h-full">
             <TiltCard accentColor="emerald" onClick={() => onStartGame('quiz', filter)}>
               <div className="p-6 h-full flex flex-col justify-between">
                 <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
@@ -181,7 +181,7 @@ export function HomeScreen({ onStartGame, onShowReview, onShowLeaderboard }: Hom
             </TiltCard>
           </div>
 
-          <div className="stagger-card md:col-span-4 aspect-[16/9] md:aspect-[4/3] max-h-[300px]">
+          <div className="stagger-card md:col-span-4 min-h-[220px] h-full">
             <TiltCard accentColor="sky" onClick={() => onStartGame('context', filter)}>
               <div className="p-6 h-full flex flex-col justify-between">
                 <div className="w-12 h-12 rounded-2xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-center text-sky-400">
@@ -195,7 +195,7 @@ export function HomeScreen({ onStartGame, onShowReview, onShowLeaderboard }: Hom
             </TiltCard>
           </div>
 
-          <div className="stagger-card md:col-span-4 aspect-[16/9] md:aspect-[4/3] max-h-[300px]">
+          <div className="stagger-card md:col-span-4 min-h-[220px] h-full">
             <TiltCard accentColor="amber" onClick={() => onStartGame('speed', filter)}>
               <div className="p-6 h-full flex flex-col justify-between">
                 <div className="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400">
@@ -209,7 +209,7 @@ export function HomeScreen({ onStartGame, onShowReview, onShowLeaderboard }: Hom
             </TiltCard>
           </div>
 
-          <div className="stagger-card md:col-span-4 aspect-[16/9] md:aspect-[4/3] max-h-[300px]">
+          <div className="stagger-card md:col-span-4 min-h-[220px] h-full">
             <TiltCard accentColor="violet" onClick={() => onStartGame('scramble', filter)}>
               <div className="p-6 h-full flex flex-col justify-between">
                 <div className="w-12 h-12 rounded-2xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center text-violet-400">
@@ -223,7 +223,7 @@ export function HomeScreen({ onStartGame, onShowReview, onShowLeaderboard }: Hom
             </TiltCard>
           </div>
 
-          <div className="stagger-card md:col-span-4 aspect-[16/9] md:aspect-[4/3] max-h-[300px]">
+          <div className="stagger-card md:col-span-4 min-h-[220px] h-full">
             <TiltCard accentColor="rose" onClick={() => onStartGame('flashcard', filter)}>
               <div className="p-6 h-full flex flex-col justify-between">
                 <div className="w-12 h-12 rounded-2xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400">
