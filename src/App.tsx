@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Analytics } from '@vercel/analytics/react';
 import { HomeScreen } from './components/screens/HomeScreen';
@@ -14,8 +14,6 @@ import { WordDetailModal } from './components/ui/WordDetailModal';
 import { InstallPrompt } from './components/ui/InstallPrompt';
 import { useGameStore } from './store/useGameStore';
 import { WORDS } from './data/words';
-import { auth } from './lib/firebase';
-import { signInAnonymously, onAuthStateChanged } from 'firebase/auth';
 
 type Screen = 'home' | 'game' | 'results' | 'review' | 'leaderboard';
 type Mode = 'daily' | 'speed' | 'flashcard' | 'contrast' | 'context' | 'scramble' | null;
@@ -28,16 +26,7 @@ export default function App() {
   const store = useGameStore();
   const selectedWord = WORDS.find(w => w.word === store.selectedWordForDetail) || null;
 
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth as any, (user) => {
-      if (user) {
-        store.setUid(user.uid);
-      } else {
-        signInAnonymously(auth as any).catch(console.error);
-      }
-    });
-    return () => unsubscribe();
-  }, []);
+
 
   const [score, setScore] = useState(0);
   const [total, setTotal] = useState(0);

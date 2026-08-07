@@ -1,6 +1,18 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { syncUserToFirebase } from '../lib/firebase';
+import { v4 as uuidv4 } from 'uuid';
+
+const syncUserToKV = async (uid: string, username: string, xp: number) => {
+  try {
+    await fetch('/api/leaderboard', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ uid, username, xp })
+    });
+  } catch (err) {
+    console.error("Error syncing to KV:", err);
+  }
+};
 
 export interface WordMastery {
   correct: number;
@@ -54,7 +66,7 @@ const calculateNextInterval = (currentInterval: number = 0, isCorrect: boolean) 
 export const useGameStore = create<GameState>()(
   persist(
     (set, get) => ({
-      uid: null,
+      uid: uuidv4(),
       username: `Scholar_${Math.floor(Math.random() * 10000)}`,
       xp: 0,
       level: 1,
@@ -74,8 +86,8 @@ export const useGameStore = create<GameState>()(
       
       setUsername: (username) => {
         set({ username });
-        const { uid, xp, streak } = get();
-        if (uid) syncUserToFirebase(uid, { username, xp, streak });
+        const { uid, xp } = get();
+        if (uid) syncUserToKV(uid, username, xp);
       },
 
       addXP: (amount) => set((state) => {
@@ -86,7 +98,7 @@ export const useGameStore = create<GameState>()(
           newLevel = state.level + 1;
         }
         
-        if (state.uid) syncUserToFirebase(state.uid, { xp: newXp, username: state.username, streak: state.streak });
+        if (state.uid) syncUserToKV(state.uid, state.username, newXp);
         
         return { xp: newXp, level: newLevel };
       }),
@@ -111,7 +123,7 @@ export const useGameStore = create<GameState>()(
         const newStreak = state.streak + 1;
         const bestStreak = Math.max(state.bestStreak, newStreak);
         
-        if (state.uid) syncUserToFirebase(state.uid, { xp: state.xp, username: state.username, streak: newStreak });
+        if (state.uid) syncUserToKV(state.uid, state.username, state.xp);
         
         return { 
           streak: newStreak, 
