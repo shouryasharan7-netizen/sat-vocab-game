@@ -197,9 +197,9 @@ export function GameScreen({ mode, difficultyFilter = 'All', onQuit, onEndGame }
       showStreakOverlay('UNSTOPPABLE');
     }
 
-    if (!noDelay && mode !== 'flashcard') {
+    if (!noDelay && mode !== 'flashcard' && mode !== 'context') {
       setTimeout(() => nextQuestion(), 800);
-    } else {
+    } else if (mode !== 'context') {
       nextQuestion();
     }
   };
@@ -216,9 +216,9 @@ export function GameScreen({ mode, difficultyFilter = 'All', onQuit, onEndGame }
     
     setShakeTrigger(prev => prev + 1); // trigger shake animation
     
-    if (!noDelay && mode !== 'flashcard') {
+    if (!noDelay && mode !== 'flashcard' && mode !== 'context') {
       setTimeout(() => nextQuestion(), 1500);
-    } else {
+    } else if (mode !== 'context') {
       nextQuestion();
     }
   };
@@ -531,6 +531,17 @@ export function GameScreen({ mode, difficultyFilter = 'All', onQuit, onEndGame }
                       );
                     })}
                   </div>
+                )}
+                {answered && mode === 'context' && (
+                  <motion.div 
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="mt-8 flex justify-center w-full"
+                  >
+                    <Button variant="primary" size="lg" onClick={nextQuestion} className="w-full max-w-xs rounded-xl py-4 shadow-[0_0_20px_rgba(79,70,229,0.2)]">
+                      Next Question
+                    </Button>
+                  </motion.div>
                 )}
               </>
             )}
