@@ -7,7 +7,7 @@ export default async function handler(req: any, res: any) {
     if (req.method === 'GET') {
       // Fetch top 50 players sorted by XP descending
       // We use zrange with 'REV' and 'WITHSCORES'
-      const topScores = await kv.zrange('leaderboard_xp', 0, 49, { rev: true, withScores: true });
+      const topScores = await kv.zrange('leaderboard_xp_v2', 0, 49, { rev: true, withScores: true });
       
       // topScores returns e.g. [ 'uid1', 500, 'uid2', 300 ]
       // We also need to fetch their usernames. 
@@ -17,7 +17,7 @@ export default async function handler(req: any, res: any) {
       for (let i = 0; i < topScores.length; i += 2) {
         const uid = topScores[i] as string;
         const xp = topScores[i + 1] as number;
-        const username = await kv.hget('user_profiles', uid) || 'Unknown Scholar';
+        const username = await kv.hget('user_profiles_v2', uid) || 'Unknown Scholar';
         players.push({ uid, username, xp });
       }
       
@@ -30,11 +30,18 @@ export default async function handler(req: any, res: any) {
         return res.status(400).json({ error: 'Missing required fields' });
       }
 
+      let safeUsername = String(username).replace(/[^a-zA-Z0-9 _-]/g, '').slice(0, 20).trim();
+      if (!safeUsername) safeUsername = 'Anonymous';
+
+      if (xp > 50000 || xp < 0) {
+        return res.status(400).json({ error: 'Invalid XP amount' });
+      }
+
       // Update XP in the sorted set
-      await kv.zadd('leaderboard_xp', { score: xp, member: uid });
+      await kv.zadd('leaderboard_xp_v2', { score: xp, member: uid });
       
       // Update Username in the hash map
-      await kv.hset('user_profiles', { [uid]: username });
+      await kv.hset('user_profiles_v2', { [uid]: safeUsername });
 
       return res.status(200).json({ success: true });
     }
