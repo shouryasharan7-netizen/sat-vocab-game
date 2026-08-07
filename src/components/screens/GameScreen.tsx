@@ -356,13 +356,13 @@ export function GameScreen({ mode, difficultyFilter = 'All', onEndGame }: GameSc
       animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
       exit={{ opacity: 0, scale: 0.98, filter: "blur(10px)" }}
       transition={{ type: "spring", stiffness: 350, damping: 25, mass: 0.5 }}
-      className="max-w-3xl mx-auto w-full px-4 py-8 relative z-10 min-h-screen flex flex-col"
+      className="max-w-3xl mx-auto w-full px-4 py-4 md:py-8 relative z-10 min-h-screen flex flex-col"
     >
-      <div className="flex justify-between items-center mb-8">
-        <Button variant="secondary" size="sm" onClick={() => endGameSession(score, currentIndex, wrongWords)} className="gap-2 glass-pill text-zinc-300 hover:text-white">
-          <ArrowLeft className="w-4 h-4" /> Quit
+      <div className="flex justify-between items-start md:items-center mb-4 md:mb-8 gap-4">
+        <Button variant="secondary" size="sm" onClick={() => endGameSession(score, currentIndex, wrongWords)} className="gap-2 glass-pill text-zinc-300 hover:text-white shrink-0">
+          <ArrowLeft className="w-4 h-4" /> <span className="hidden sm:inline">Quit</span>
         </Button>
-        <div className="flex items-center gap-4 text-sm font-semibold text-zinc-400">
+        <div className="flex flex-wrap justify-end items-center gap-2 md:gap-4 text-xs md:text-sm font-semibold text-zinc-400">
           
           <div className="relative group">
             <div className="flex items-center gap-1.5 glass-pill px-3 py-1.5 text-zinc-200">

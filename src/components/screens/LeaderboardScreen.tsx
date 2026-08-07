@@ -115,15 +115,15 @@ export function LeaderboardScreen({ onBack }: { onBack: () => void }) {
         {/* Leaderboard List */}
         <div className="lg:col-span-2">
           <Card className="p-2 md:p-6 glass-card">
-            <div className="flex justify-between items-center mb-6 px-4">
-              <h3 className="text-sm font-bold text-zinc-500 uppercase tracking-widest">Top Players</h3>
-              <div className="flex bg-black/40 rounded-lg p-1 gap-1 border border-white/10">
+            <div className="flex flex-wrap justify-between md:justify-between items-center mb-6 px-2 md:px-4 gap-4">
+              <h3 className="text-sm font-bold text-zinc-500 uppercase tracking-widest hidden md:block">Top Players</h3>
+              <div className="flex bg-black/40 rounded-lg p-1 gap-1 border border-white/10 w-full sm:w-auto overflow-x-auto justify-center mx-auto md:mx-0">
                 {(['all', 'weekly', 'daily'] as const).map(tf => (
                   <button 
                     key={tf}
                     onClick={() => setTimeframe(tf)}
                     className={cn(
-                      "px-3 py-1.5 text-xs font-bold rounded-md capitalize transition-colors",
+                      "px-3 py-1.5 text-xs font-bold rounded-md capitalize transition-colors whitespace-nowrap",
                       timeframe === tf ? "bg-indigo-500 text-white" : "text-zinc-500 hover:text-zinc-300"
                     )}
                   >
@@ -134,7 +134,7 @@ export function LeaderboardScreen({ onBack }: { onBack: () => void }) {
               <button 
                 onClick={fetchLeaderboard} 
                 disabled={loading}
-                className="flex items-center gap-2 text-xs font-bold text-zinc-400 hover:text-white transition-colors bg-white/5 px-3 py-1.5 rounded-lg disabled:opacity-50"
+                className="flex items-center justify-center gap-2 text-xs font-bold text-zinc-400 hover:text-white transition-colors bg-white/5 px-3 py-1.5 rounded-lg disabled:opacity-50 w-full sm:w-auto"
               >
                 <RefreshCw className={cn("w-3.5 h-3.5", loading && "animate-spin")} />
                 Refresh

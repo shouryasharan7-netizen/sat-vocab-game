@@ -130,20 +130,20 @@ export function HomeScreen({ onStartGame, onShowLeaderboard, onShowReview }: { o
       </div>
 
       <div className="max-w-5xl mx-auto w-full px-4 py-24 relative z-10">
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-24 gap-8">
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-12 md:mb-24 gap-6 md:gap-8">
           <div>
             <h1 className="text-4xl md:text-6xl font-bold tracking-tight text-white mb-2">SAT Vocab Quest</h1>
             <p className="text-zinc-400 text-lg">Master 1000+ Digital SAT words through play.</p>
           </div>
 
-          <div className="flex gap-4 items-center">
-            <Button variant="secondary" className="glass-pill gap-2 hidden md:flex" onClick={() => setShowSyncModal(true)}>
+          <div className="flex flex-wrap gap-2 md:gap-4 items-center w-full justify-center md:justify-end">
+            <Button variant="secondary" className="glass-pill gap-2 flex" onClick={() => setShowSyncModal(true)}>
               <Smartphone className="w-4 h-4 text-emerald-400" />
-              Link Device
+              <span className="hidden sm:inline">Link</span>
             </Button>
             <Button variant="secondary" className="glass-pill gap-2" onClick={onShowLeaderboard}>
               <Trophy className="w-4 h-4 text-amber-400" />
-              Leaderboard
+              <span className="hidden sm:inline">Leaderboard</span>
             </Button>
 
             <div className="relative w-12 h-12 flex items-center justify-center group">
