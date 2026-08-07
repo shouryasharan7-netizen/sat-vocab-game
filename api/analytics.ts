@@ -17,7 +17,7 @@ export default async function handler(req: any, res: any) {
     }
 
     if (req.method === 'POST') {
-      const { failedWords } = req.body;
+      const { failedWords } = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
       if (!Array.isArray(failedWords) || failedWords.length === 0) {
         return res.status(400).json({ error: 'Missing or invalid failedWords' });
       }

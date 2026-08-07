@@ -13,7 +13,7 @@ export default async function handler(req: any, res: any) {
     }
 
     if (req.method === 'POST') {
-      const { uid, state } = req.body;
+      const { uid, state } = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
       if (!uid || !state) return res.status(400).json({ error: 'Missing required fields' });
 
       // Save state to KV

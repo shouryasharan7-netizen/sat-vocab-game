@@ -9,11 +9,11 @@ const getWeeklyKey = () => `leaderboard_weekly_${Math.floor(Date.now() / (1000 *
 export default async function handler(req: any, res: any) {
   try {
     if (req.method === 'POST') {
-      const { action } = req.body;
+      const { action } = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
 
       // Start Game: Generate a session token
       if (action === 'start') {
-        const { uid } = req.body;
+        const { uid } = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
         if (!uid) return res.status(400).json({ error: 'Missing uid' });
         
         const sessionId = uuidv4();
@@ -25,7 +25,7 @@ export default async function handler(req: any, res: any) {
 
       // End Game: Validate session and XP
       if (action === 'end') {
-        const { sessionId, uid, username, xpGained, totalXp } = req.body;
+        const { sessionId, uid, username, xpGained, totalXp } = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
         if (!sessionId || !uid || !username || typeof xpGained !== 'number' || typeof totalXp !== 'number') {
           return res.status(400).json({ error: 'Missing required fields' });
         }

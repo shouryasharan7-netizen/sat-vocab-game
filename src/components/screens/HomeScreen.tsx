@@ -36,9 +36,9 @@ export function HomeScreen({ onStartGame, onShowLeaderboard, onShowReview }: { o
       const res = await fetch('/api/sync', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'generate', uid: store.uid }) });
       const data = await res.json();
       if (data.code) setGeneratedCode(data.code);
-      else setSyncError('Failed to generate code');
+      else setSyncError(data.error || 'Failed to generate code');
     } catch (e) {
-      setSyncError('Network error');
+      setSyncError('Network error (Are you running locally without vercel dev?)');
     }
   };
 

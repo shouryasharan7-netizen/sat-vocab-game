@@ -29,7 +29,7 @@ export default async function handler(req: any, res: any) {
     }
 
     if (req.method === 'POST') {
-      const { uid, username, xp, deltaXp } = req.body;
+      const { uid, username, xp, deltaXp } = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
       
       // We need deltaXp to increment the daily/weekly leaderboards accurately.
       // If deltaXp is not provided, we fall back to just setting the all-time.

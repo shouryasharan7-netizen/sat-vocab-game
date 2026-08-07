@@ -5,10 +5,10 @@ const kv = Redis.fromEnv();
 export default async function handler(req: any, res: any) {
   try {
     if (req.method === 'POST') {
-      const { action } = req.body;
+      const { action } = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
 
       if (action === 'generate') {
-        const { uid } = req.body;
+        const { uid } = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
         if (!uid) return res.status(400).json({ error: 'Missing uid' });
         
         // Generate a 6 digit code
@@ -21,7 +21,7 @@ export default async function handler(req: any, res: any) {
       }
 
       if (action === 'consume') {
-        const { code } = req.body;
+        const { code } = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
         if (!code) return res.status(400).json({ error: 'Missing code' });
 
         const targetUid = await kv.get(`sync:${code}`);
