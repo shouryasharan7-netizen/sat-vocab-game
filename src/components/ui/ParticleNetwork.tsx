@@ -2,6 +2,10 @@ import { useEffect, useRef } from 'react';
 
 export function ParticleNetwork() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  
+  if (typeof window !== 'undefined' && window.innerWidth < 768) {
+    return null;
+  }
 
   useEffect(() => {
     // Disable on reduced motion

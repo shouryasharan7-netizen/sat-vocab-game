@@ -39,6 +39,10 @@ export function ScrollVelocitySkew({ children }: { children: React.ReactNode }) 
     };
   }, []);
 
+  if (typeof window !== 'undefined' && window.innerWidth < 768) {
+    return <>{children}</>;
+  }
+
   return (
     <div ref={containerRef} style={{ willChange: 'transform', transformOrigin: 'center center' }}>
       {children}

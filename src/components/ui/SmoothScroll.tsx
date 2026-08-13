@@ -8,15 +8,17 @@ gsap.registerPlugin(ScrollTrigger);
 export function SmoothScroll({ children }: { children: React.ReactNode }) {
   const lenisRef = useRef<Lenis | null>(null);
 
+  if (typeof window !== 'undefined' && window.innerWidth < 768) {
+    return <>{children}</>;
+  }
+
   useEffect(() => {
     // Respect prefers-reduced-motion
     const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (prefersReducedMotion) return;
 
-    const isMobile = window.innerWidth < 768;
-
     const lenis = new Lenis({
-      lerp: isMobile ? 0.05 : 0.1,
+      lerp: 0.1,
       smoothWheel: true,
       wheelMultiplier: 1,
       touchMultiplier: 2,

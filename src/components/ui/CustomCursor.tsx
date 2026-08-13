@@ -3,6 +3,10 @@ import gsap from 'gsap';
 
 export function CustomCursor() {
   const cursorRef = useRef<HTMLDivElement>(null);
+  
+  if (typeof window !== 'undefined' && window.innerWidth < 768) {
+    return null;
+  }
 
   useEffect(() => {
     // Disable on mobile or if reduced motion is preferred
