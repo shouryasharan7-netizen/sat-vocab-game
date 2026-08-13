@@ -90,13 +90,13 @@ export function WordDetailModal({ word, onClose }: WordDetailModalProps) {
                     <Volume2 className="w-6 h-6" />
                   </button>
                 </div>
-                <span className="text-zinc-500 uppercase tracking-widest text-xs font-bold bg-white/5 px-3 py-1 rounded-full mt-4 inline-block">
+                <span className="text-zinc-400 uppercase tracking-widest text-xs font-bold bg-white/5 px-3 py-1 rounded-full mt-4 inline-block">
                   {word.pos}
                 </span>
               </div>
               <button 
                 onClick={onClose}
-                className="text-zinc-500 hover:text-white transition-colors p-2 bg-white/5 hover:bg-white/10 rounded-full"
+                className="text-zinc-400 hover:text-white transition-colors p-2 bg-white/5 hover:bg-white/10 rounded-full"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -104,7 +104,7 @@ export function WordDetailModal({ word, onClose }: WordDetailModalProps) {
 
             {/* Definition */}
             <div className="mb-10 relative z-10">
-              <h3 className="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-3">Definition</h3>
+              <h2 className="text-xs font-bold text-zinc-400 uppercase tracking-widest mb-3">Definition</h2>
               <p className="text-2xl md:text-3xl font-serif text-white leading-snug mb-4">{word.def}</p>
               <p className="text-lg text-zinc-400 italic border-l-2 border-violet-500/30 pl-4 py-1">"{word.ex}"</p>
             </div>
@@ -112,7 +112,7 @@ export function WordDetailModal({ word, onClose }: WordDetailModalProps) {
             {/* Mastery progress */}
             <div className="mb-10 flex items-center gap-6">
               <div>
-                <h3 className="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-3">Mastery Level</h3>
+                <h2 className="text-xs font-bold text-zinc-400 uppercase tracking-widest mb-3">Mastery Level</h2>
                 <div className="flex items-center gap-4">
                   <div className="relative w-12 h-12 flex items-center justify-center">
                     <svg className="absolute inset-0 w-full h-full -rotate-90">
@@ -140,9 +140,9 @@ export function WordDetailModal({ word, onClose }: WordDetailModalProps) {
             {/* Etymology */}
             {word.roots && word.roots.length > 0 && (
               <div className="mb-10">
-                <h3 className="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-4 flex items-center gap-2">
+                <h2 className="text-xs font-bold text-zinc-400 uppercase tracking-widest mb-4 flex items-center gap-2">
                   <BookOpen className="w-4 h-4" /> Etymology
-                </h3>
+                </h2>
                 <div className="flex flex-wrap gap-3">
                   {word.roots.map((r, i) => (
                     <div key={i} className="flex items-center glass-pill overflow-hidden">
@@ -165,7 +165,7 @@ export function WordDetailModal({ word, onClose }: WordDetailModalProps) {
                   <button
                     className={cn(
                       "flex-1 py-2 text-sm font-bold rounded-lg transition-all",
-                      showSynonyms ? "bg-cyan-500/10 text-cyan-400 shadow-sm" : "text-zinc-500 hover:text-zinc-300"
+                      showSynonyms ? "bg-cyan-500/10 text-cyan-400 shadow-sm" : "text-zinc-400 hover:text-zinc-300"
                     )}
                     onClick={() => setShowSynonyms(true)}
                   >
@@ -174,7 +174,7 @@ export function WordDetailModal({ word, onClose }: WordDetailModalProps) {
                   <button
                     className={cn(
                       "flex-1 py-2 text-sm font-bold rounded-lg transition-all",
-                      !showSynonyms ? "bg-amber-500/10 text-amber-400 shadow-sm" : "text-zinc-500 hover:text-zinc-300"
+                      !showSynonyms ? "bg-amber-500/10 text-amber-400 shadow-sm" : "text-zinc-400 hover:text-zinc-300"
                     )}
                     onClick={() => setShowSynonyms(false)}
                   >
@@ -187,13 +187,13 @@ export function WordDetailModal({ word, onClose }: WordDetailModalProps) {
                       <span key={i} className="bg-cyan-500/10 text-cyan-300 px-4 py-1.5 rounded-full text-sm font-medium border border-cyan-500/20">
                         {s}
                       </span>
-                    )) || <span className="text-zinc-500 text-sm italic">No synonyms available.</span>
+                    )) || <span className="text-zinc-400 text-sm italic">No synonyms available.</span>
                   ) : (
                     word.antonyms?.map((a, i) => (
                       <span key={i} className="bg-amber-500/10 text-amber-300 px-4 py-1.5 rounded-full text-sm font-medium border border-amber-500/20">
                         {a}
                       </span>
-                    )) || <span className="text-zinc-500 text-sm italic">No antonyms available.</span>
+                    )) || <span className="text-zinc-400 text-sm italic">No antonyms available.</span>
                   )}
                 </div>
               </div>
@@ -202,9 +202,9 @@ export function WordDetailModal({ word, onClose }: WordDetailModalProps) {
             {/* Performance Sparkline */}
             {history.length > 0 && (
               <div className="border-t border-white/5 pt-8">
-                <h3 className="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-4 flex items-center gap-2">
+                <h2 className="text-xs font-bold text-zinc-400 uppercase tracking-widest mb-4 flex items-center gap-2">
                   <Activity className="w-4 h-4" /> Recent Performance
-                </h3>
+                </h2>
                 <div className="flex items-end gap-1.5 h-8">
                   {history.slice(-20).map((correct, i) => (
                     <motion.div 

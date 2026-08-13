@@ -98,6 +98,14 @@ export function TiltCard({ children, className, onClick, accentColor = 'emerald'
       <div
         ref={cardRef}
         onClick={onClick}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            onClick?.();
+          }
+        }}
         className={cn(
           "relative w-full h-full glass-card overflow-hidden transition-colors cursor-pointer group active:scale-97 transform-gpu",
           accentStyles[accentColor],

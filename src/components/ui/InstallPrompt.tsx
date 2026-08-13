@@ -64,7 +64,7 @@ export function InstallPrompt() {
               <Download className="w-6 h-6 text-indigo-400" />
             </div>
             <div className="flex-1">
-              <h3 className="text-white font-bold mb-1">Install App</h3>
+              <h2 className="text-white font-bold mb-1">Install App</h2>
               <p className="text-xs text-slate-400 mb-3">Install SAT Vocab Quest on your device for offline play and better performance.</p>
               <div className="flex gap-2">
                 <Button variant="primary" size="sm" onClick={handleInstallClick} className="flex-1 py-1.5 text-xs">

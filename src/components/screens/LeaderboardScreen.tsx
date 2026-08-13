@@ -91,7 +91,7 @@ export function LeaderboardScreen({ onBack }: { onBack: () => void }) {
             ) : (
               <div className="flex items-center gap-2 mb-4">
                 <h2 className="text-2xl font-bold text-white font-serif">{store.username}</h2>
-                <button onClick={() => setIsEditingName(true)} className="p-1.5 text-zinc-500 hover:text-white transition-colors bg-white/5 rounded-md">
+                <button onClick={() => setIsEditingName(true)} className="p-1.5 text-zinc-400 hover:text-white transition-colors bg-white/5 rounded-md">
                   <Edit2 className="w-3.5 h-3.5" />
                 </button>
               </div>
@@ -99,13 +99,13 @@ export function LeaderboardScreen({ onBack }: { onBack: () => void }) {
             
             <div className="w-full grid grid-cols-2 gap-3">
               <div className="bg-black/30 border border-white/5 rounded-xl p-3 text-center">
-                <div className="text-xs uppercase text-zinc-500 font-bold mb-1">Rank</div>
+                <div className="text-xs uppercase text-zinc-400 font-bold mb-1">Rank</div>
                 <div className="text-xl font-mono text-amber-400 font-bold">
                   #{players.findIndex(p => p.uid === store.uid) + 1 || '-'}
                 </div>
               </div>
               <div className="bg-black/30 border border-white/5 rounded-xl p-3 text-center">
-                <div className="text-xs uppercase text-zinc-500 font-bold mb-1">XP</div>
+                <div className="text-xs uppercase text-zinc-400 font-bold mb-1">XP</div>
                 <div className="text-xl font-mono text-emerald-400 font-bold">{store.xp}</div>
               </div>
             </div>
@@ -116,7 +116,7 @@ export function LeaderboardScreen({ onBack }: { onBack: () => void }) {
         <div className="lg:col-span-2">
           <Card className="p-2 md:p-6 glass-card">
             <div className="flex flex-wrap justify-between md:justify-between items-center mb-6 px-2 md:px-4 gap-4">
-              <h3 className="text-sm font-bold text-zinc-500 uppercase tracking-widest hidden md:block">Top Players</h3>
+              <h2 className="text-sm font-bold text-zinc-400 uppercase tracking-widest hidden md:block">Top Players</h2>
               <div className="flex bg-black/40 rounded-lg p-1 gap-1 border border-white/10 w-full sm:w-auto overflow-x-auto justify-center mx-auto md:mx-0">
                 {(['all', 'weekly', 'daily'] as const).map(tf => (
                   <button 
@@ -124,7 +124,7 @@ export function LeaderboardScreen({ onBack }: { onBack: () => void }) {
                     onClick={() => setTimeframe(tf)}
                     className={cn(
                       "px-3 py-1.5 text-xs font-bold rounded-md capitalize transition-colors whitespace-nowrap",
-                      timeframe === tf ? "bg-indigo-500 text-white" : "text-zinc-500 hover:text-zinc-300"
+                      timeframe === tf ? "bg-indigo-500 text-white" : "text-zinc-400 hover:text-zinc-300"
                     )}
                   >
                     {tf === 'all' ? 'All Time' : tf}
@@ -146,14 +146,14 @@ export function LeaderboardScreen({ onBack }: { onBack: () => void }) {
                 <div className="w-8 h-8 border-4 border-indigo-500/30 border-t-indigo-500 rounded-full animate-spin" />
               </div>
             ) : players.length === 0 ? (
-              <div className="py-12 text-center text-zinc-500 font-medium">No players found. Sync will happen automatically on Vercel.</div>
+              <div className="py-12 text-center text-zinc-400 font-medium">No players found. Sync will happen automatically on Vercel.</div>
             ) : (
               <div className="flex flex-col gap-2">
                 {players.map((player, index) => {
                   const isMe = player.uid === store.uid;
                   
                   let RankIcon = null;
-                  let rankColor = "text-zinc-500";
+                  let rankColor = "text-zinc-400";
                   if (index === 0) { RankIcon = Crown; rankColor = "text-amber-400"; }
                   else if (index === 1) { RankIcon = Medal; rankColor = "text-slate-300"; }
                   else if (index === 2) { RankIcon = Medal; rankColor = "text-amber-700"; }
@@ -182,7 +182,7 @@ export function LeaderboardScreen({ onBack }: { onBack: () => void }) {
 
                       <div className="text-right">
                         <div className="font-mono font-bold text-emerald-400 text-lg">{player.xp || 0}</div>
-                        <div className="text-[10px] text-zinc-500 uppercase tracking-widest font-bold">XP</div>
+                        <div className="text-[10px] text-zinc-400 uppercase tracking-widest font-bold">XP</div>
                       </div>
                     </motion.div>
                   );

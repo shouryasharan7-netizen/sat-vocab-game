@@ -4,7 +4,7 @@ import { useGameStore } from '../../store/useGameStore';
 import { ACHIEVEMENTS } from '../../data/achievements';
 import { Card } from '../ui/Card';
 import { Button } from '../ui/Button';
-import { ArrowRight, Trophy } from 'lucide-react';
+import { ArrowRight, Trophy, Share2 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
 interface ResultsScreenProps {
@@ -50,6 +50,16 @@ export function ResultsScreen({ score, total, mode, wrongWords, onContinue }: Re
 
   const xpEarned = score * (mode === 'speed' ? 5 : 10);
 
+  const handleShare = async () => {
+    const text = `I just scored ${score}/${total} (${pct}%) in SAT Vocab Quest! 🔥\nCan you beat my score? https://satvocab.xyz`;
+    try {
+      await navigator.clipboard.writeText(text);
+      alert('Score copied to clipboard!');
+    } catch {
+      alert('Failed to copy to clipboard.');
+    }
+  };
+
   return (
     <motion.div 
       initial={{ opacity: 0, scale: 0.98, filter: "blur(10px)" }}
@@ -75,16 +85,16 @@ export function ResultsScreen({ score, total, mode, wrongWords, onContinue }: Re
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
           <div className="bg-black/40 border border-white/5 rounded-2xl p-6 flex flex-col items-center">
             <div className="text-3xl font-bold text-emerald-400 mb-2 font-mono tabular-nums">{score}</div>
-            <div className="text-xs uppercase tracking-widest text-zinc-500 font-bold">Correct</div>
+            <div className="text-xs uppercase tracking-widest text-zinc-400 font-bold">Correct</div>
           </div>
           <div className="bg-black/40 border border-white/5 rounded-2xl p-6 flex flex-col items-center">
-            <div className="text-3xl font-bold text-rose-400 mb-2 font-mono tabular-nums">{total - score}</div>
-            <div className="text-xs uppercase tracking-widest text-zinc-500 font-bold">Wrong</div>
+            <div className="text-3xl font-bold text-sky-400 mb-2 font-mono tabular-nums">{pct}%</div>
+            <div className="text-xs uppercase tracking-widest text-zinc-400 font-bold">Accuracy</div>
           </div>
           <div className="bg-black/40 border border-white/5 rounded-2xl p-6 flex flex-col items-center relative overflow-hidden">
             <div className="absolute inset-0 bg-violet-500/5 animate-pulse" />
             <div className="text-3xl font-bold text-amber-400 mb-2 font-mono tabular-nums relative z-10">+{xpEarned}</div>
-            <div className="text-xs uppercase tracking-widest text-zinc-500 font-bold relative z-10">XP Earned</div>
+            <div className="text-xs uppercase tracking-widest text-zinc-400 font-bold relative z-10">XP Earned</div>
           </div>
         </div>
 
@@ -119,7 +129,7 @@ export function ResultsScreen({ score, total, mode, wrongWords, onContinue }: Re
 
         {wrongWords.length > 0 && (
           <div className="text-left mt-8 pt-8 border-t border-white/10">
-            <h3 className="text-sm font-bold text-zinc-500 uppercase tracking-widest mb-4">Needs Review</h3>
+            <h2 className="text-sm font-bold text-zinc-400 uppercase tracking-widest mb-4">Needs Review</h2>
             <div className="flex flex-wrap gap-2">
               {wrongWords.map((w, i) => (
                 <span key={i} className="bg-rose-500/10 text-rose-300 px-4 py-2 rounded-lg text-sm font-medium border border-rose-500/20">
@@ -131,9 +141,14 @@ export function ResultsScreen({ score, total, mode, wrongWords, onContinue }: Re
         )}
       </Card>
 
-      <Button onClick={onContinue} className="w-full text-lg h-16 rounded-2xl shadow-[0_0_30px_rgba(79,70,229,0.2)]">
-        Continue <ArrowRight className="w-5 h-5 ml-2" />
-      </Button>
+      <div className="flex flex-col sm:flex-row gap-4 mt-4">
+        <Button onClick={handleShare} variant="secondary" className="w-full sm:w-1/2 text-lg h-16 rounded-2xl">
+          <Share2 className="w-5 h-5 mr-2" /> Share Score
+        </Button>
+        <Button onClick={onContinue} className="w-full sm:w-1/2 text-lg h-16 rounded-2xl shadow-[0_0_30px_rgba(79,70,229,0.2)]">
+          Continue <ArrowRight className="w-5 h-5 ml-2" />
+        </Button>
+      </div>
     </motion.div>
   );
 }

@@ -137,12 +137,12 @@ export function HomeScreen({ onStartGame, onShowLeaderboard, onShowReview }: { o
           </div>
 
           <div className="flex flex-wrap gap-2 md:gap-4 items-center w-full justify-center md:justify-end">
-            <Button variant="secondary" className="glass-pill gap-2 flex" onClick={() => setShowSyncModal(true)}>
-              <Smartphone className="w-4 h-4 text-emerald-400" />
+            <Button variant="secondary" className="glass-pill gap-2 flex" onClick={() => setShowSyncModal(true)} aria-label="Link your account">
+              <Smartphone className="w-4 h-4 text-emerald-400" aria-hidden="true" />
               <span className="hidden sm:inline">Link</span>
             </Button>
-            <Button variant="secondary" className="glass-pill gap-2" onClick={onShowLeaderboard}>
-              <Trophy className="w-4 h-4 text-amber-400" />
+            <Button variant="secondary" className="glass-pill gap-2" onClick={onShowLeaderboard} aria-label="View global leaderboard">
+              <Trophy className="w-4 h-4 text-amber-400" aria-hidden="true" />
               <span className="hidden sm:inline">Leaderboard</span>
             </Button>
 
@@ -171,7 +171,7 @@ export function HomeScreen({ onStartGame, onShowLeaderboard, onShowReview }: { o
             </div>
 
             <div className="glass-pill px-4 py-2 flex items-center gap-2 group hover:border-white/10 hover:scale-105 transition-all">
-              <div className="text-zinc-500 text-xs font-medium uppercase tracking-widest">XP</div>
+              <div className="text-zinc-400 text-xs font-medium uppercase tracking-widest">XP</div>
               <span ref={xpRef} className="font-mono text-white text-base font-medium tabular-nums">{xp}</span>
             </div>
 
@@ -200,102 +200,102 @@ export function HomeScreen({ onStartGame, onShowLeaderboard, onShowReview }: { o
         </div>
 
         <div ref={sectionRef} className="grid grid-cols-1 md:grid-cols-12 gap-4">
-          <div className="stagger-card md:col-span-8 min-h-[220px] h-full">
+          <div className="stagger-card md:col-span-8 h-full" style={{ minHeight: '220px' }}>
             <TiltCard accentColor="emerald" onClick={() => onStartGame('quiz', filter)}>
               <div className="p-6 h-full flex flex-col justify-between">
                 <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
-                  <CheckCircle className="w-6 h-6 stroke-[1.5]" />
+                  <CheckCircle className="w-6 h-6 stroke-[1.5]" aria-hidden="true" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-2xl text-white mb-2">Definition Match</h3>
-                  <p className="text-xs text-zinc-500 line-clamp-2">Master precise meanings through rapid-fire multiple choice.</p>
+                  <h2 className="font-bold text-2xl text-white mb-2">Definition Match</h2>
+                  <p className="text-xs text-zinc-300 line-clamp-2">Master precise meanings through rapid-fire multiple choice.</p>
                 </div>
               </div>
             </TiltCard>
           </div>
 
-          <div className="stagger-card md:col-span-4 min-h-[220px] h-full">
+          <div className="stagger-card md:col-span-4 h-full" style={{ minHeight: '220px' }}>
             <TiltCard accentColor="sky" onClick={() => onStartGame('context', filter)}>
               <div className="p-6 h-full flex flex-col justify-between">
                 <div className="w-12 h-12 rounded-2xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-center text-sky-400">
-                  <ScrollText className="w-6 h-6 stroke-[1.5]" />
+                  <ScrollText className="w-6 h-6 stroke-[1.5]" aria-hidden="true" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-xl text-white mb-2">Context Clues</h3>
-                  <p className="text-xs text-zinc-500 line-clamp-2">Fill in the blanks using sentence context.</p>
+                  <h2 className="font-bold text-xl text-white mb-2">Context Clues</h2>
+                  <p className="text-xs text-zinc-300 line-clamp-2">Fill in the blanks using sentence context.</p>
                 </div>
               </div>
             </TiltCard>
           </div>
 
-          <div className="stagger-card md:col-span-4 min-h-[220px] h-full">
+          <div className="stagger-card md:col-span-4 h-full" style={{ minHeight: '220px' }}>
             <TiltCard accentColor="amber" onClick={() => onStartGame('speed', filter)}>
               <div className="p-6 h-full flex flex-col justify-between">
                 <div className="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400">
-                  <Zap className="w-6 h-6 stroke-[1.5]" />
+                  <Zap className="w-6 h-6 stroke-[1.5]" aria-hidden="true" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-xl text-white mb-2">Speed Run</h3>
-                  <p className="text-xs text-zinc-500 line-clamp-2">Beat the clock. Tests quick recall and mastery.</p>
+                  <h2 className="font-bold text-xl text-white mb-2">Speed Run</h2>
+                  <p className="text-xs text-zinc-300 line-clamp-2">Beat the clock. Tests quick recall and mastery.</p>
                 </div>
               </div>
             </TiltCard>
           </div>
 
-          <div className="stagger-card md:col-span-4 min-h-[220px] h-full">
+          <div className="stagger-card md:col-span-4 h-full" style={{ minHeight: '220px' }}>
             <TiltCard accentColor="violet" onClick={() => onStartGame('scramble', filter)}>
               <div className="p-6 h-full flex flex-col justify-between">
                 <div className="w-12 h-12 rounded-2xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center text-violet-400">
-                  <RefreshCw className="w-6 h-6 stroke-[1.5]" />
+                  <RefreshCw className="w-6 h-6 stroke-[1.5]" aria-hidden="true" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-xl text-white mb-2">Word Scramble</h3>
-                  <p className="text-xs text-zinc-500 line-clamp-2">Spell words correctly from their definitions.</p>
+                  <h2 className="font-bold text-xl text-white mb-2">Word Scramble</h2>
+                  <p className="text-xs text-zinc-300 line-clamp-2">Unscramble the letters to find the right word.</p>
                 </div>
               </div>
             </TiltCard>
           </div>
 
-          <div className="stagger-card md:col-span-4 min-h-[220px] h-full">
+          <div className="stagger-card md:col-span-4 h-full" style={{ minHeight: '220px' }}>
             <TiltCard accentColor="rose" onClick={() => onStartGame('flashcard', filter)}>
               <div className="p-6 h-full flex flex-col justify-between">
                 <div className="w-12 h-12 rounded-2xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400">
-                  <BookOpen className="w-6 h-6 stroke-[1.5]" />
+                  <BookOpen className="w-6 h-6 stroke-[1.5]" aria-hidden="true" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-xl text-white mb-2">Flashcards</h3>
-                  <p className="text-xs text-zinc-500 line-clamp-2">Classic study mode with no pressure.</p>
+                  <h2 className="font-bold text-xl text-white mb-2">Flashcards</h2>
+                  <p className="text-xs text-zinc-300 line-clamp-2">Spaced repetition. Swipe to master the list.</p>
                 </div>
               </div>
             </TiltCard>
           </div>
 
-          <div className="stagger-card md:col-span-12 min-h-[160px]">
+          <div className="stagger-card md:col-span-12" style={{ minHeight: '160px' }}>
             <TiltCard accentColor="red" onClick={() => onStartGame('community', filter)}>
               <div className="p-6 h-full flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
                 <div className="flex gap-6 items-center">
                   <div className="w-16 h-16 rounded-2xl bg-red-500/10 border border-red-500/20 flex shrink-0 items-center justify-center text-red-400">
-                    <Flame className="w-8 h-8 stroke-[1.5]" />
+                    <Flame className="w-8 h-8 stroke-[1.5]" aria-hidden="true" />
                   </div>
                   <div>
-                    <h3 className="font-bold text-2xl text-white mb-2">Community Hardest</h3>
-                    <p className="text-sm text-zinc-500 max-w-md">Test yourself against the top 50 most failed words globally.</p>
+                    <h2 className="font-bold text-2xl text-white mb-2">Community Hardest</h2>
+                    <p className="text-sm text-zinc-300 max-w-md">Test yourself against the top 50 most failed words globally.</p>
                   </div>
                 </div>
               </div>
             </TiltCard>
           </div>
 
-          <div className="stagger-card md:col-span-12 h-[200px]">
+          <div className="stagger-card md:col-span-12" style={{ minHeight: '200px' }}>
             <TiltCard accentColor="red" onClick={onShowReview}>
               <div className="p-6 h-full flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
                 <div className="flex gap-6 items-center">
                   <div className="w-16 h-16 rounded-2xl bg-red-500/10 border border-red-500/20 flex shrink-0 items-center justify-center text-red-400">
-                    <Brain className="w-8 h-8 stroke-[1.5]" />
+                    <Brain className="w-8 h-8 stroke-[1.5]" aria-hidden="true" />
                   </div>
                   <div>
-                    <h3 className="font-bold text-2xl text-white mb-2">Review Weak Words</h3>
-                    <p className="text-sm text-zinc-500 line-clamp-2 max-w-md">Targeted spaced repetition for words you missed. Strengthen your weak points algorithmically.</p>
+                    <h2 className="font-bold text-2xl text-white mb-2">Review Weak Words</h2>
+                    <p className="text-sm text-zinc-300 line-clamp-2 max-w-md">Targeted spaced repetition for words you missed. Strengthen your weak points algorithmically.</p>
                   </div>
                 </div>
               </div>
@@ -315,15 +315,15 @@ export function HomeScreen({ onStartGame, onShowLeaderboard, onShowReview }: { o
               initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }}
               className="bg-[#141414] border border-white/10 rounded-2xl p-8 max-w-md w-full shadow-2xl relative"
             >
-              <button onClick={() => setShowSyncModal(false)} className="absolute top-4 right-4 text-zinc-500 hover:text-white">&times;</button>
+              <button onClick={() => setShowSyncModal(false)} className="absolute top-4 right-4 text-zinc-400 hover:text-white">&times;</button>
               
               <h2 className="text-2xl font-bold text-white mb-2">Link Devices</h2>
               <p className="text-zinc-400 text-sm mb-8">Play seamlessly across your phone and computer without making an account.</p>
 
               <div className="space-y-6">
                 <div className="bg-white/5 border border-white/10 rounded-xl p-4">
-                  <h3 className="text-sm font-bold text-emerald-400 mb-2">Step 1: Generate Code</h3>
-                  <p className="text-xs text-zinc-500 mb-4">Click below to generate a sync code on your main device.</p>
+                  <h2 className="text-sm font-bold text-emerald-400 mb-2">Step 1: Generate Code</h2>
+                  <p className="text-xs text-zinc-400 mb-4">Click below to generate a sync code on your main device.</p>
                   {generatedCode ? (
                     <div className="text-center py-3 bg-black/40 rounded-lg text-3xl font-mono tracking-[0.5em] font-bold text-white">
                       {generatedCode}
@@ -333,11 +333,11 @@ export function HomeScreen({ onStartGame, onShowLeaderboard, onShowReview }: { o
                   )}
                 </div>
 
-                <div className="text-center text-zinc-600 text-xs font-bold uppercase">OR</div>
+                <div className="text-center text-zinc-400 text-xs font-bold uppercase">OR</div>
 
                 <div className="bg-white/5 border border-white/10 rounded-xl p-4">
-                  <h3 className="text-sm font-bold text-indigo-400 mb-2">Step 2: Enter Code</h3>
-                  <p className="text-xs text-zinc-500 mb-4">Enter a code from your other device to link this one to it.</p>
+                  <h2 className="text-sm font-bold text-indigo-400 mb-2">Step 2: Enter Code</h2>
+                  <p className="text-xs text-zinc-400 mb-4">Enter a code from your other device to link this one to it.</p>
                   <div className="flex gap-2">
                     <input 
                       type="text" 

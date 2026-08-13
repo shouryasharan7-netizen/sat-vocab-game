@@ -120,7 +120,7 @@ export function ReviewScreen({ onBack }: { onBack: () => void }) {
 
                   <div className="flex items-center gap-4 shrink-0 relative z-10">
                     <div className="flex flex-col items-end">
-                      <span className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest mb-2">Mastery</span>
+                      <span className="text-[10px] text-zinc-400 font-bold uppercase tracking-widest mb-2">Mastery</span>
                       <div className="flex items-center gap-3">
                         <div className="relative w-10 h-10 flex items-center justify-center">
                           <svg className="absolute inset-0 w-full h-full -rotate-90">
@@ -140,7 +140,7 @@ export function ReviewScreen({ onBack }: { onBack: () => void }) {
                           </svg>
                           <span className="text-[11px] font-bold text-white z-10">{m.correct}</span>
                         </div>
-                        <span className="text-xs font-bold text-zinc-500">/ 5</span>
+                        <span className="text-xs font-bold text-zinc-400">/ 5</span>
                       </div>
                     </div>
                   </div>

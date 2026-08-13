@@ -1,11 +1,15 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, lazy, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import confetti from 'canvas-confetti';
 import { useGameStore } from '../../store/useGameStore';
 import { WORDS, type Word } from '../../data/words';
-import { Card } from '../ui/Card';
 import { Button, cn } from '../ui/Button';
 import { ArrowLeft, Flame, Star, ListChecks } from 'lucide-react';
+
+const FlashcardMode = lazy(() => import('../game-modes/FlashcardMode'));
+const ScrambleMode = lazy(() => import('../game-modes/ScrambleMode'));
+const ContrastMode = lazy(() => import('../game-modes/ContrastMode'));
+const StandardQuizMode = lazy(() => import('../game-modes/StandardQuizMode'));
 
 interface GameScreenProps {
   mode: string;
@@ -35,9 +39,6 @@ export function GameScreen({ mode, difficultyFilter = 'All', onEndGame }: GameSc
   const [contrastTarget, setContrastTarget] = useState<'synonym' | 'antonym'>('synonym');
   const [contrastOptions, setContrastOptions] = useState<{text: string, isCorrect: boolean}[]>([]);
   
-  const scrambleInputRef = useRef<HTMLInputElement>(null);
-  const cardRef = useRef<HTMLDivElement>(null);
-
   // New states for streak overlays and shaking
   const [streakOverlay, setStreakOverlay] = useState<string | null>(null);
   const [shakeTrigger, setShakeTrigger] = useState(0);
@@ -130,7 +131,7 @@ export function GameScreen({ mode, difficultyFilter = 'All', onEndGame }: GameSc
     }
     
     if (mode === 'scramble') {
-      setTimeout(() => scrambleInputRef.current?.focus(), 100);
+      // autoFocus handles this inside ScrambleMode now
     }
     
     if (mode === 'contrast') {
@@ -362,9 +363,15 @@ export function GameScreen({ mode, difficultyFilter = 'All', onEndGame }: GameSc
       animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
       exit={{ opacity: 0, scale: 0.98, filter: "blur(10px)" }}
       transition={{ type: "spring", stiffness: 350, damping: 25, mass: 0.5 }}
-      className="max-w-3xl mx-auto w-full px-4 py-4 md:py-8 relative z-10 min-h-screen flex flex-col"
+      className="max-w-3xl mx-auto w-full px-4 py-4 md:py-8 relative z-10 min-h-screen flex flex-col pt-8"
     >
-      <div className="flex justify-between items-start md:items-center mb-4 md:mb-8 gap-4">
+      <div className="absolute top-0 left-0 right-0 h-1.5 bg-white/5 overflow-hidden rounded-t-lg">
+        <div 
+          className="h-full bg-gradient-to-r from-emerald-500 via-sky-500 to-indigo-500 transition-all duration-500 ease-out" 
+          style={{ width: `${mode === 'speed' ? (currentIndex / 50) * 100 : (currentIndex / questions.length) * 100}%` }} 
+        />
+      </div>
+      <div className="flex justify-between items-start md:items-center mb-4 md:mb-8 gap-4 mt-2">
         <Button variant="secondary" size="sm" onClick={() => endGameSession(score, currentIndex, wrongWords)} className="gap-2 glass-pill text-zinc-300 hover:text-white shrink-0">
           <ArrowLeft className="w-4 h-4" /> <span className="hidden sm:inline">Quit</span>
         </Button>
@@ -372,7 +379,8 @@ export function GameScreen({ mode, difficultyFilter = 'All', onEndGame }: GameSc
           
           <div className="relative group">
             <div className="flex items-center gap-1.5 glass-pill px-3 py-1.5 text-zinc-200">
-              <Flame className={cn("w-4 h-4", store.streak >= 3 ? "text-amber-500 animate-pulse" : "text-zinc-500")} /> {store.streak}
+              <Flame className={cn("w-4 h-4 transition-all duration-300", store.streak > 0 ? "text-amber-500 animate-pulse drop-shadow-[0_0_8px_rgba(245,158,11,0.8)] scale-110" : "text-zinc-400")} /> 
+              <span className={cn("font-bold", store.streak > 0 && "text-amber-400")}>{store.streak}</span>
             </div>
             {/* Cinematic Overlay */}
             <AnimatePresence>
@@ -439,199 +447,17 @@ export function GameScreen({ mode, difficultyFilter = 'All', onEndGame }: GameSc
             animate={shakeTrigger ? { x: [-10, 10, -10, 10, 0] } : {}}
             transition={{ duration: 0.4 }}
           >
-            {mode === 'flashcard' ? (
-              <div className="perspective-1000 mb-8 w-full max-w-xl mx-auto">
-                <motion.div 
-                  className="relative w-full h-[400px] cursor-pointer transform-style-3d"
-                  animate={{ rotateY: isFlipped ? 180 : 0 }}
-                  transition={{ type: "spring", stiffness: 200, damping: 20 }}
-                  onClick={() => setIsFlipped(!isFlipped)}
-                >
-                  <Card className="absolute inset-0 backface-hidden flex flex-col items-center justify-center p-8 glass-card">
-                    <div className="text-5xl font-serif italic text-white mb-4 tracking-tight">{q.word}</div>
-                    <div className="text-sm text-zinc-500 uppercase tracking-widest font-bold">Tap to reveal definition</div>
-                  </Card>
-                  <Card className="absolute inset-0 backface-hidden rotate-y-180 flex flex-col items-center justify-center p-8 text-center bg-indigo-950/20 border-indigo-500/20">
-                    <div className="text-3xl font-serif italic text-white mb-6">{q.word}</div>
-                    <div className="text-xl text-zinc-300 mb-8 leading-relaxed font-medium">{q.def}</div>
-                    <div className="text-sm text-zinc-500 italic max-w-md">"{q.ex}"</div>
-                  </Card>
-                </motion.div>
-                
-                <div className="flex justify-center gap-4 mt-12">
-                  <Button variant="danger" size="lg" className="w-48 bg-rose-500/10 text-rose-500 border border-rose-500/20 hover:bg-rose-500/20" onClick={() => handleWrong(q.word, q, true)}>Need Review</Button>
-                  <Button variant="success" size="lg" className="w-48 bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 hover:bg-emerald-500/20" onClick={(e) => handleCorrect(q.word, e, true)}>Got It</Button>
-                </div>
-              </div>
-            ) : (
-              <>
-                <Card ref={cardRef} className="flex flex-col items-center justify-center min-h-[280px] p-8 mb-8 relative overflow-hidden glass-card">
-                  {(mode === 'quiz' || mode === 'speed') && (
-                    <>
-                      <h2 className="text-5xl md:text-6xl font-serif italic text-white tracking-tight mb-4 text-center">{q.word}</h2>
-                      <span className="text-zinc-500 uppercase tracking-widest text-xs font-bold bg-white/5 px-3 py-1 rounded-full">{q.pos}</span>
-                    </>
-                  )}
-                  
-                  {mode === 'context' && (
-                    <>
-                      <div className="flex items-center gap-2 mb-8">
-                        <span className="text-xs text-indigo-400 bg-indigo-500/10 px-3 py-1.5 rounded-full uppercase tracking-widest font-bold">
-                          {thematicTag}
-                        </span>
-                        <div className="h-px bg-white/10 flex-1 ml-4" />
-                      </div>
-                      <div className="text-2xl text-white leading-relaxed text-center max-w-xl font-medium font-serif">
-                        {q.ex.split(new RegExp(`(${q.word})`, 'gi')).map((part, i) => 
-                          part.toLowerCase() === q.word.toLowerCase() 
-                            ? <span key={i} className="inline-block min-w-[120px] border-b-2 border-indigo-400 text-indigo-300 mx-2 px-2 font-bold" />
-                            : <span key={i}>{part}</span>
-                        )}
-                      </div>
-                    </>
-                  )}
-
-                  {mode === 'scramble' && (
-                    <>
-                      <div className="text-xs text-zinc-500 uppercase tracking-widest font-bold mb-8">Unscramble this word</div>
-                      <div className="text-5xl font-mono text-white tracking-[0.25em] mb-6 text-center uppercase">
-                        {q.word.split('').sort(() => Math.random() - 0.5).join('')}
-                      </div>
-                      <div className="text-lg text-zinc-400 text-center font-serif italic max-w-md">{q.def}</div>
-                    </>
-                  )}
-                  
-                  {mode === 'contrast' && (
-                    <>
-                      <div className="text-xs text-zinc-500 uppercase tracking-widest font-bold mb-8">
-                        Contrast Match
-                      </div>
-                      <div className="text-xl text-zinc-400 mb-4 font-medium">Find the <span className={cn("font-black", contrastTarget === 'synonym' ? "text-cyan-400" : "text-amber-400")}>{contrastTarget.toUpperCase()}</span> for</div>
-                      <h2 className="text-5xl font-serif italic text-white tracking-tight mb-6 text-center">{q.word}</h2>
-                      <div className="text-base text-zinc-500 max-w-sm text-center">{q.def}</div>
-                    </>
-                  )}
-                </Card>
-
-                {/* Answer Options */}
-                {mode === 'scramble' ? (
-                  <div className="flex flex-col gap-4 max-w-md mx-auto">
-                    <div className="relative">
-                      <input
-                        ref={scrambleInputRef}
-                        type="text"
-                        value={scrambleInput}
-                        onChange={(e) => setScrambleInput(e.target.value)}
-                        onKeyDown={(e) => e.key === 'Enter' && onScrambleSubmit()}
-                        placeholder="Type the word..."
-                        className={cn(
-                          "w-full bg-[#141414] border-2 rounded-2xl p-6 text-center text-2xl font-mono tracking-widest text-white placeholder:text-zinc-700 focus:outline-none transition-all",
-                          answered 
-                            ? scrambleInput.trim().toLowerCase() === q.word.toLowerCase()
-                              ? "border-emerald-500 text-emerald-400 bg-emerald-500/10"
-                              : "border-rose-500 text-rose-400 bg-rose-500/10"
-                            : "border-white/10 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20"
-                        )}
-                        disabled={answered}
-                      />
-                      {answered && scrambleInput.trim().toLowerCase() !== q.word.toLowerCase() && (
-                        <motion.div 
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          className="absolute -bottom-10 left-0 right-0 text-center font-mono font-bold text-emerald-400 text-lg tracking-widest"
-                        >
-                          {q.word}
-                        </motion.div>
-                      )}
-                    </div>
-                    <Button variant="primary" size="lg" onClick={onScrambleSubmit} disabled={answered} className={cn("h-16 text-lg rounded-2xl shadow-[0_0_20px_rgba(79,70,229,0.2)] mt-4", answered && "opacity-0")}>Submit Answer</Button>
-                  </div>
-                ) : mode === 'contrast' ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-2xl mx-auto">
-                    {contrastOptions.map((opt, i) => {
-                      let stateClass = i === 0 
-                        ? "bg-cyan-500/5 border-cyan-500/20 text-cyan-100 hover:bg-cyan-500/10" 
-                        : "bg-amber-500/5 border-amber-500/20 text-amber-100 hover:bg-amber-500/10";
-                      
-                      if (answered) {
-                        if (opt.isCorrect) stateClass = 'bg-emerald-500/10 border-emerald-500/40 text-emerald-400 shadow-[0_0_30px_rgba(16,185,129,0.15)] scale-[1.02]';
-                        else stateClass = 'bg-rose-500/10 border-rose-500/40 text-rose-400 opacity-50 scale-[0.98]';
-                      }
-
-                      return (
-                        <motion.button
-                          key={i}
-                          disabled={answered}
-                          onClick={(e: any) => onContrastSubmit(opt.isCorrect, e)}
-                          whileHover={!answered ? { scale: 1.02, y: -2 } : {}}
-                          whileTap={!answered ? { scale: 0.98 } : {}}
-                          className={cn(
-                            "w-full glass-card rounded-2xl p-8 text-center text-xl font-bold transition-all duration-300 ease-out flex items-center justify-center min-h-[140px]",
-                            stateClass
-                          )}
-                        >
-                          {opt.text}
-                        </motion.button>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-1 gap-3 max-w-2xl mx-auto w-full">
-                    {options.map((opt, i) => {
-                      const isSelected = selectedWord === opt.word;
-                      const isCorrect = opt.word === q.word;
-                      
-                      let stateClass = '';
-                      if (answered) {
-                        if (isCorrect) stateClass = 'bg-emerald-500/10 border-emerald-500/40 text-emerald-400 shadow-[0_0_30px_rgba(16,185,129,0.15)] scale-[1.02] z-10 relative';
-                        else if (isSelected) stateClass = 'bg-rose-500/10 border-rose-500/40 text-rose-400 scale-[0.98]';
-                        else stateClass = 'opacity-40 border-white/5';
-                      }
-
-                      return (
-                        <motion.button
-                          key={i}
-                          disabled={answered}
-                          onClick={(e: any) => onAnswerQuiz(opt.word, e)}
-                          whileHover={!answered ? { scale: 1.01, x: 4 } : {}}
-                          whileTap={!answered ? { scale: 0.98 } : {}}
-                          className={cn(
-                            "w-full glass-card rounded-xl p-5 text-left text-base font-medium text-zinc-300 transition-all duration-300 ease-out hover:border-indigo-500/30 hover:bg-[#1a1a1a]",
-                            stateClass
-                          )}
-                        >
-                          {mode === 'quiz' || mode === 'speed' ? opt.def : (
-                            <div className="flex flex-col">
-                              <span className="font-bold">{opt.word}</span>
-                              {answered && mode === 'context' && (
-                                <motion.span 
-                                  initial={{ opacity: 0, height: 0 }}
-                                  animate={{ opacity: 1, height: 'auto' }}
-                                  className="text-sm text-zinc-400 mt-2 italic font-serif leading-relaxed"
-                                >
-                                  {opt.def}
-                                </motion.span>
-                              )}
-                            </div>
-                          )}
-                        </motion.button>
-                      );
-                    })}
-                  </div>
-                )}
-                {answered && mode === 'context' && (
-                  <motion.div 
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="mt-8 flex justify-center w-full"
-                  >
-                    <Button variant="primary" size="lg" onClick={nextQuestion} className="w-full max-w-xs rounded-xl py-4 shadow-[0_0_20px_rgba(79,70,229,0.2)]">
-                      Next Question
-                    </Button>
-                  </motion.div>
-                )}
-              </>
-            )}
+            <Suspense fallback={<div className="min-h-[400px] flex items-center justify-center"><div className="w-8 h-8 rounded-full border-4 border-emerald-500 border-t-transparent animate-spin" /></div>}>
+              {mode === 'flashcard' ? (
+                <FlashcardMode q={q} isFlipped={isFlipped} setIsFlipped={setIsFlipped} handleWrong={handleWrong} handleCorrect={handleCorrect} />
+              ) : mode === 'scramble' ? (
+                <ScrambleMode q={q} answered={answered} scrambleInput={scrambleInput} setScrambleInput={setScrambleInput} onScrambleSubmit={onScrambleSubmit} />
+              ) : mode === 'contrast' ? (
+                <ContrastMode q={q} contrastTarget={contrastTarget} contrastOptions={contrastOptions} answered={answered} onContrastSubmit={onContrastSubmit} />
+              ) : (
+                <StandardQuizMode q={q} mode={mode} options={options} answered={answered} selectedWord={selectedWord} onAnswerQuiz={onAnswerQuiz} thematicTag={thematicTag} nextQuestion={nextQuestion} />
+              )}
+            </Suspense>
           </motion.div>
         </motion.div>
       </AnimatePresence>
