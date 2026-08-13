@@ -1,16 +1,17 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Volume2, X, Activity, BookOpen } from 'lucide-react';
-import { type Word } from '../../data/words';
+import { WORDS } from '../../data/words';
 import { useGameStore } from '../../store/useGameStore';
 import { cn } from './Button';
 
 interface WordDetailModalProps {
-  word: Word | null;
+  wordId: string | null;
   onClose: () => void;
 }
 
-export function WordDetailModal({ word, onClose }: WordDetailModalProps) {
+export function WordDetailModal({ wordId, onClose }: WordDetailModalProps) {
+  const word = WORDS.find(w => w.word === wordId) || null;
   const store = useGameStore();
   const [showSynonyms, setShowSynonyms] = useState(true);
   const lastSpokeTime = useRef<number>(0);

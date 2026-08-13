@@ -1,19 +1,19 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Analytics } from '@vercel/analytics/react';
 import { HomeScreen } from './components/screens/HomeScreen';
-import { GameScreen } from './components/screens/GameScreen';
-import { ResultsScreen } from './components/screens/ResultsScreen';
-import { ReviewScreen } from './components/screens/ReviewScreen';
-import { LeaderboardScreen } from './components/screens/LeaderboardScreen';
 import { SmoothScroll } from './components/ui/SmoothScroll';
 import { CustomCursor } from './components/ui/CustomCursor';
 import { ScrollVelocitySkew } from './components/ui/ScrollVelocitySkew';
 import { ConfettiModal } from './components/ui/ConfettiModal';
-import { WordDetailModal } from './components/ui/WordDetailModal';
 import { InstallPrompt } from './components/ui/InstallPrompt';
 import { useGameStore } from './store/useGameStore';
-import { WORDS } from './data/words';
+
+const GameScreen = React.lazy(() => import('./components/screens/GameScreen').then(m => ({ default: m.GameScreen })));
+const ResultsScreen = React.lazy(() => import('./components/screens/ResultsScreen').then(m => ({ default: m.ResultsScreen })));
+const ReviewScreen = React.lazy(() => import('./components/screens/ReviewScreen').then(m => ({ default: m.ReviewScreen })));
+const LeaderboardScreen = React.lazy(() => import('./components/screens/LeaderboardScreen').then(m => ({ default: m.LeaderboardScreen })));
+const WordDetailModal = React.lazy(() => import('./components/ui/WordDetailModal').then(m => ({ default: m.WordDetailModal })));
 
 type Screen = 'home' | 'game' | 'results' | 'review' | 'leaderboard';
 type Mode = 'daily' | 'speed' | 'flashcard' | 'contrast' | 'context' | 'scramble' | null;
@@ -24,7 +24,6 @@ export default function App() {
   const [filter, setFilter] = useState<'All' | 'Common' | 'Advanced' | 'Obscure'>('All');
   
   const store = useGameStore();
-  const selectedWord = WORDS.find(w => w.word === store.selectedWordForDetail) || null;
 
 
 
@@ -53,65 +52,69 @@ export default function App() {
       <SmoothScroll>
         <ScrollVelocitySkew>
           <main className="relative z-10 flex min-h-screen flex-col">
-            <AnimatePresence mode="wait">
-              {screen === 'home' && (
-                <motion.div key="home" variants={pageVariants} initial="initial" animate="animate" exit="exit" className="flex-1 flex flex-col">
-                  <HomeScreen 
-                    onStartGame={(m, f = 'All') => {
-                      setMode(m as Mode);
-                      setFilter(f as any);
-                      setScreen('game');
-                    }} 
-                    onShowReview={() => setScreen('review')} 
-                    onShowLeaderboard={() => setScreen('leaderboard')}
-                  />
-                </motion.div>
-              )}
+            <React.Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="w-8 h-8 rounded-full border-4 border-emerald-500 border-t-transparent animate-spin" /></div>}>
+              <AnimatePresence mode="wait">
+                {screen === 'home' && (
+                  <motion.div key="home" variants={pageVariants} initial="initial" animate="animate" exit="exit" className="flex-1 flex flex-col">
+                    <HomeScreen 
+                      onStartGame={(m, f = 'All') => {
+                        setMode(m as Mode);
+                        setFilter(f as any);
+                        setScreen('game');
+                      }} 
+                      onShowReview={() => setScreen('review')} 
+                      onShowLeaderboard={() => setScreen('leaderboard')}
+                    />
+                  </motion.div>
+                )}
 
-              {screen === 'game' && mode && (
-                <motion.div key="game" variants={pageVariants} initial="initial" animate="animate" exit="exit" className="flex-1 flex flex-col">
-                  <GameScreen
-                    mode={mode}
-                    difficultyFilter={filter}
-                    onEndGame={handleEndGame}
-                  />
-                </motion.div>
-              )}
+                {screen === 'game' && mode && (
+                  <motion.div key="game" variants={pageVariants} initial="initial" animate="animate" exit="exit" className="flex-1 flex flex-col">
+                    <GameScreen
+                      mode={mode}
+                      difficultyFilter={filter}
+                      onEndGame={handleEndGame}
+                    />
+                  </motion.div>
+                )}
 
-              {screen === 'results' && (
-                <motion.div key="results" variants={pageVariants} initial="initial" animate="animate" exit="exit" className="flex-1 flex flex-col">
-                  <ResultsScreen
-                    score={score}
-                    total={total}
-                    mode={mode || ''}
-                    wrongWords={wrongWords}
-                    onContinue={() => setScreen('home')}
-                  />
-                </motion.div>
-              )}
+                {screen === 'results' && (
+                  <motion.div key="results" variants={pageVariants} initial="initial" animate="animate" exit="exit" className="flex-1 flex flex-col">
+                    <ResultsScreen
+                      score={score}
+                      total={total}
+                      mode={mode || ''}
+                      wrongWords={wrongWords}
+                      onContinue={() => setScreen('home')}
+                    />
+                  </motion.div>
+                )}
 
-              {screen === 'review' && (
-                <motion.div key="review" variants={pageVariants} initial="initial" animate="animate" exit="exit" className="flex-1 flex flex-col">
-                  <ReviewScreen
-                    onBack={() => setScreen('home')}
-                  />
-                </motion.div>
-              )}
+                {screen === 'review' && (
+                  <motion.div key="review" variants={pageVariants} initial="initial" animate="animate" exit="exit" className="flex-1 flex flex-col">
+                    <ReviewScreen
+                      onBack={() => setScreen('home')}
+                    />
+                  </motion.div>
+                )}
 
-              {screen === 'leaderboard' && (
-                <motion.div key="leaderboard" variants={pageVariants} initial="initial" animate="animate" exit="exit" className="flex-1 flex flex-col">
-                  <LeaderboardScreen onBack={() => setScreen('home')} />
-                </motion.div>
-              )}
-            </AnimatePresence>
+                {screen === 'leaderboard' && (
+                  <motion.div key="leaderboard" variants={pageVariants} initial="initial" animate="animate" exit="exit" className="flex-1 flex flex-col">
+                    <LeaderboardScreen onBack={() => setScreen('home')} />
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </React.Suspense>
           </main>
         </ScrollVelocitySkew>
       </SmoothScroll>
       <ConfettiModal />
-      <WordDetailModal 
-        word={selectedWord} 
-        onClose={() => store.setSelectedWordForDetail(null)} 
-      />
+      <React.Suspense fallback={null}>
+        <WordDetailModal 
+          wordId={store.selectedWordForDetail} 
+          onClose={() => store.setSelectedWordForDetail(null)} 
+        />
+      </React.Suspense>
       <InstallPrompt />
     </div>
   );
