@@ -85,16 +85,19 @@ export function GameScreen({ mode, difficultyFilter = 'All', onEndGame }: GameSc
       fetch('/api/analytics')
         .then(res => res.json())
         .then(data => {
-          if (data.words) {
-            const hardWords = data.words.map((w: any) => WORDS.find(x => x.word === w.word)).filter(Boolean);
-            if (hardWords.length > 0) {
-              setQuestions(hardWords.slice(0, 20));
-              return;
-            }
+          let selected: any[] = [];
+          if (data.words && data.words.length > 0) {
+            const communityWords = data.words.map((w: any) => WORDS.find(word => word.word === w.word)).filter(Boolean);
+            selected = [...communityWords];
           }
-          setQuestions(getWeightedWords(count));
+          // Fill the rest with weighted random words if we don't have 10 community words
+          if (selected.length < 10) {
+            const fill = getWeightedWords(10 - selected.length).filter(w => !selected.find(s => s.word === w.word));
+            selected = [...selected, ...fill].slice(0, 10);
+          }
+          setQuestions(selected.length > 0 ? selected : getWeightedWords(10));
         })
-        .catch(() => setQuestions(getWeightedWords(count)));
+        .catch(() => setQuestions(getWeightedWords(10)));
     } else {
       setQuestions(getWeightedWords(count));
     }

@@ -8,9 +8,19 @@ export default async function handler(req: any, res: any) {
       // Fetch top 50 hardest words
       const topWords = await kv.zrange('hardest_words', 0, 49, { rev: true, withScores: true });
       
-      const words = [];
-      for (let i = 0; i < topWords.length; i += 2) {
-        words.push({ word: topWords[i], fails: topWords[i + 1] });
+      const words = topWords.map((item: any) => {
+        if (typeof item === 'object' && item !== null && 'member' in item) {
+          return { word: item.member, fails: item.score };
+        }
+        // Fallback for flat array format just in case
+        return null;
+      }).filter(Boolean);
+      
+      if (words.length === 0 && topWords.length > 0 && typeof topWords[0] === 'string') {
+        // Handle flat array format if the upstash client version returns it
+        for (let i = 0; i < topWords.length; i += 2) {
+          words.push({ word: topWords[i], fails: topWords[i + 1] });
+        }
       }
       
       return res.status(200).json({ words });
