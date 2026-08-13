@@ -32,6 +32,7 @@ export function ResultsScreen({ score, total, mode, wrongWords, onContinue }: Re
         colors: ['#10b981', '#34d399', '#f59e0b', '#fbbf24']
       });
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const pct = total > 0 ? Math.round((score / total) * 100) : 0;

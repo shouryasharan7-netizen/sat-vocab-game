@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import gsap from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
 
 export function ScrollVelocitySkew({ children }: { children: React.ReactNode }) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -20,10 +21,9 @@ export function ScrollVelocitySkew({ children }: { children: React.ReactNode }) 
     const skewTo = gsap.quickTo(container, 'skewY', { duration: 0.1, ease: 'power2.out' });
 
     // Better way: ScrollTrigger
-    import('gsap/ScrollTrigger').then(({ ScrollTrigger }) => {
-      gsap.registerPlugin(ScrollTrigger);
-      
-      ScrollTrigger.create({
+    gsap.registerPlugin(ScrollTrigger);
+    
+    ScrollTrigger.create({
         trigger: document.body,
         start: 0,
         end: 'max',
@@ -32,7 +32,6 @@ export function ScrollVelocitySkew({ children }: { children: React.ReactNode }) 
           const skew = Math.max(-1.5, Math.min(1.5, self.getVelocity() * -0.001));
           skewTo(skew);
         }
-      });
     });
 
     return () => {

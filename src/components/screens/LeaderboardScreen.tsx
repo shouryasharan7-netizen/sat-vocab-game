@@ -33,7 +33,7 @@ export function LeaderboardScreen({ onBack }: { onBack: () => void }) {
       console.error("Error fetching leaderboard:", err);
     }
     setLoading(false);
-  }, []);
+  }, [timeframe]);
 
   useEffect(() => {
     fetchLeaderboard();

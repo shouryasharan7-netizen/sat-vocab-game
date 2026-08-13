@@ -42,7 +42,7 @@ export function HomeScreen({ onStartGame, onShowLeaderboard, onShowReview }: { o
       const data = await res.json();
       if (data.code) setGeneratedCode(data.code);
       else setSyncError(data.error || 'Failed to generate code');
-    } catch (e) {
+    } catch {
       setSyncError('Network error (Are you running locally without vercel dev?)');
     }
   };
@@ -67,7 +67,7 @@ export function HomeScreen({ onStartGame, onShowLeaderboard, onShowReview }: { o
       } else {
         setSyncError(data.error || 'Invalid code');
       }
-    } catch (e) {
+    } catch {
       setSyncError('Network error');
     }
   };

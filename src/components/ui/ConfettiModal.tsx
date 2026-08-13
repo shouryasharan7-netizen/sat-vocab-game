@@ -42,6 +42,7 @@ export function ConfettiModal() {
         clearTimeout(timeout);
       };
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [word]);
 
   return (

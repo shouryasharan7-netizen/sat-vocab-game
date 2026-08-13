@@ -116,6 +116,7 @@ export function GameScreen({ mode, difficultyFilter = 'All', onEndGame }: GameSc
       })
       .catch(console.error);
 
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -184,12 +185,14 @@ export function GameScreen({ mode, difficultyFilter = 'All', onEndGame }: GameSc
     if (timeLeft === 0 && mode === 'speed') {
       endGameSession(scoreRef.current, currentIndex, wrongWordsRef.current);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [timeLeft]);
 
   useEffect(() => {
     if (questions.length > 0 && currentIndex >= questions.length && mode !== 'speed') {
       endGameSession(scoreRef.current, questions.length, wrongWordsRef.current);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentIndex, questions.length, mode]);
 
   const endGameSession = async (finalScore: number, total: number, mistakes: string[]) => {
