@@ -1,4 +1,5 @@
 import { Redis } from '@upstash/redis';
+import type { VercelRequest, VercelResponse } from '@vercel/node';
 
 const kv = Redis.fromEnv();
 
@@ -6,7 +7,7 @@ const kv = Redis.fromEnv();
 const getDailyKey = () => `leaderboard_daily_${new Date().toISOString().split('T')[0]}`;
 const getWeeklyKey = () => `leaderboard_weekly_${Math.floor(Date.now() / (1000 * 60 * 60 * 24 * 7))}`;
 
-export default async function handler(req: any, res: any) {
+export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     if (req.method === 'GET') {
       const { timeframe = 'all' } = req.query; // 'all', 'weekly', 'daily'
@@ -18,18 +19,38 @@ export default async function handler(req: any, res: any) {
       const topScores = await kv.zrange(key, 0, 49, { rev: true, withScores: true });
       
       const players = [];
-      for (let i = 0; i < topScores.length; i += 2) {
-        const uid = topScores[i] as string;
-        const xp = topScores[i + 1] as number;
-        const username = await kv.hget('user_profiles_v2', uid) || 'Unknown Scholar';
-        players.push({ uid, username, xp });
+      for (const item of topScores) {
+        if (typeof item === 'object' && item !== null && 'member' in item) {
+          const uid = item.member as string;
+          const xp = item.score as number;
+          const username = await kv.hget('user_profiles_v2', uid) || 'Unknown Scholar';
+          players.push({ uid, username, xp });
+        } else if (typeof item === 'string') {
+          // Fallback logic just in case older data or behavior
+        }
+      }
+      
+      // Fallback if it actually returned a flat array
+      if (players.length === 0 && topScores.length > 0 && typeof topScores[0] === 'string') {
+        for (let i = 0; i < topScores.length; i += 2) {
+          const uid = topScores[i] as string;
+          const xp = topScores[i + 1] as number;
+          const username = await kv.hget('user_profiles_v2', uid) || 'Unknown Scholar';
+          players.push({ uid, username, xp });
+        }
       }
       
       return res.status(200).json({ players });
     }
 
     if (req.method === 'POST') {
-      const { uid, username, xp, deltaXp } = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
+      let body;
+      try {
+        body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
+      } catch {
+        return res.status(400).json({ error: 'Invalid JSON body' });
+      }
+      const { uid, username, xp, deltaXp } = body;
       
       // We need deltaXp to increment the daily/weekly leaderboards accurately.
       // If deltaXp is not provided, we fall back to just setting the all-time.

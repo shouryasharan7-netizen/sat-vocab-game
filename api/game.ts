@@ -1,19 +1,27 @@
 import { Redis } from '@upstash/redis';
 import { v4 as uuidv4 } from 'uuid';
+import type { VercelRequest, VercelResponse } from '@vercel/node';
 
 const kv = Redis.fromEnv();
 
 const getDailyKey = () => `leaderboard_daily_${new Date().toISOString().split('T')[0]}`;
 const getWeeklyKey = () => `leaderboard_weekly_${Math.floor(Date.now() / (1000 * 60 * 60 * 24 * 7))}`;
 
-export default async function handler(req: any, res: any) {
+export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     if (req.method === 'POST') {
-      const { action } = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
+      let body;
+      try {
+        body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
+      } catch {
+        return res.status(400).json({ error: 'Invalid JSON body' });
+      }
+      
+      const { action } = body;
 
       // Start Game: Generate a session token
       if (action === 'start') {
-        const { uid } = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
+        const { uid } = body;
         if (!uid) return res.status(400).json({ error: 'Missing uid' });
         
         const sessionId = uuidv4();
@@ -25,7 +33,7 @@ export default async function handler(req: any, res: any) {
 
       // End Game: Validate session and XP
       if (action === 'end') {
-        const { sessionId, uid, username, xpGained, totalXp } = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
+        const { sessionId, uid, username, xpGained, totalXp } = body;
         if (!sessionId || !uid || !username || typeof xpGained !== 'number' || typeof totalXp !== 'number') {
           return res.status(400).json({ error: 'Missing required fields' });
         }

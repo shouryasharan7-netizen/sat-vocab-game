@@ -1,8 +1,9 @@
 import { Redis } from '@upstash/redis';
+import type { VercelRequest, VercelResponse } from '@vercel/node';
 
 const kv = Redis.fromEnv();
 
-export default async function handler(req: any, res: any) {
+export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     if (req.method === 'GET') {
       // Fetch top 50 hardest words
@@ -27,7 +28,13 @@ export default async function handler(req: any, res: any) {
     }
 
     if (req.method === 'POST') {
-      const { failedWords } = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
+      let body;
+      try {
+        body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
+      } catch {
+        return res.status(400).json({ error: 'Invalid JSON body' });
+      }
+      const { failedWords } = body;
       if (!Array.isArray(failedWords) || failedWords.length === 0) {
         return res.status(400).json({ error: 'Missing or invalid failedWords' });
       }

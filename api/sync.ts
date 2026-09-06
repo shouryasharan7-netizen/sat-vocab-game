@@ -1,14 +1,21 @@
 import { Redis } from '@upstash/redis';
+import type { VercelRequest, VercelResponse } from '@vercel/node';
 
 const kv = Redis.fromEnv();
 
-export default async function handler(req: any, res: any) {
+export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     if (req.method === 'POST') {
-      const { action } = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
+      let body;
+      try {
+        body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
+      } catch {
+        return res.status(400).json({ error: 'Invalid JSON body' });
+      }
+      const { action } = body;
 
       if (action === 'generate') {
-        const { uid } = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
+        const { uid } = body;
         if (!uid) return res.status(400).json({ error: 'Missing uid' });
         
         // Generate a 6 digit code
@@ -21,7 +28,7 @@ export default async function handler(req: any, res: any) {
       }
 
       if (action === 'consume') {
-        const { code } = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
+        const { code } = body;
         if (!code) return res.status(400).json({ error: 'Missing code' });
 
         const targetUid = await kv.get(`sync:${code}`);
