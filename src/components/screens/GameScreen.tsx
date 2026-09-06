@@ -393,6 +393,8 @@ export function GameScreen({ mode, difficultyFilter = 'All', onEndGame }: GameSc
                     "absolute top-0 left-1/2 -translate-x-1/2 font-black text-xl tracking-widest whitespace-nowrap drop-shadow-[0_0_15px_rgba(255,255,255,0.5)]",
                     streakOverlay === 'UNSTOPPABLE' ? "text-amber-400" : "text-rose-500"
                   )}
+                  role="status"
+                  aria-live="polite"
                 >
                   {streakOverlay}
                 </motion.div>

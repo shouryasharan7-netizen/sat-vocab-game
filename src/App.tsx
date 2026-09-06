@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Analytics } from '@vercel/analytics/react';
 import { HomeScreen } from './components/screens/HomeScreen';
-import { SmoothScroll } from './components/ui/SmoothScroll';
+
 import { CustomCursor } from './components/ui/CustomCursor';
 import { ScrollVelocitySkew } from './components/ui/ScrollVelocitySkew';
 import { ConfettiModal } from './components/ui/ConfettiModal';
@@ -49,8 +49,7 @@ export default function App() {
       <Analytics />
       <CustomCursor />
       
-      <SmoothScroll>
-        <ScrollVelocitySkew>
+      <ScrollVelocitySkew>
           <main className="relative z-10 flex min-h-screen flex-col">
             <React.Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="w-8 h-8 rounded-full border-4 border-emerald-500 border-t-transparent animate-spin" /></div>}>
               <AnimatePresence mode="wait">
@@ -107,7 +106,6 @@ export default function App() {
             </React.Suspense>
           </main>
         </ScrollVelocitySkew>
-      </SmoothScroll>
       <ConfettiModal />
       <React.Suspense fallback={null}>
         <WordDetailModal 
