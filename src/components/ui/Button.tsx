@@ -1,51 +1,49 @@
-import { motion, type HTMLMotionProps } from 'framer-motion';
-import { clsx, type ClassValue } from 'clsx';
-import { twMerge } from 'tailwind-merge';
+import type { ButtonHTMLAttributes, ReactNode } from 'react';
+import { cn } from '../../lib/utils';
 
-export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs));
-}
-
-interface ButtonProps extends HTMLMotionProps<"button"> {
-  variant?: 'primary' | 'secondary' | 'danger' | 'success';
+export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
+  variant?: 'primary' | 'secondary' | 'ghost' | 'danger' | 'success';
   size?: 'sm' | 'md' | 'lg';
+  children: ReactNode;
 }
 
-export function Button({ 
-  className, 
-  variant = 'secondary', 
-  size = 'md', 
-  children, 
-  ...props 
+const variantClass: Record<NonNullable<ButtonProps['variant']>, string> = {
+  primary:   'bg-emerald-500 hover:bg-emerald-400 text-black font-semibold shadow-[0_0_20px_rgba(16,185,129,0.25)] hover:shadow-[0_0_28px_rgba(16,185,129,0.45)]',
+  secondary: 'bg-white/10 hover:bg-white/15 text-white border border-white/10',
+  ghost:     'bg-transparent hover:bg-white/5 text-zinc-300 hover:text-white',
+  danger:    'bg-red-600 hover:bg-red-500 text-white font-semibold',
+  success:   'bg-emerald-600 hover:bg-emerald-500 text-white font-semibold',
+};
+
+const sizeClass: Record<NonNullable<ButtonProps['size']>, string> = {
+  sm: 'px-3 py-1.5 text-sm rounded-lg',
+  md: 'px-5 py-2.5 text-sm rounded-xl',
+  lg: 'px-7 py-3.5 text-base rounded-2xl',
+};
+
+export function Button({
+  variant = 'primary',
+  size = 'md',
+  className,
+  children,
+  disabled,
+  ...props
 }: ButtonProps) {
-  
-  const variants = {
-    primary: 'bg-indigo-600 text-white border-transparent hover:bg-indigo-500 hover:shadow-[0_0_20px_rgba(99,102,241,0.4)]',
-    secondary: 'bg-[#1a1a2e] text-[#e8e8f0] border-[#2a2a45] hover:bg-[#252542] hover:border-indigo-500/50',
-    danger: 'bg-red-500/10 text-red-500 border-red-500/30 hover:bg-red-500/20',
-    success: 'bg-green-500/10 text-green-500 border-green-500/30 hover:bg-green-500/20',
-  };
-
-  const sizes = {
-    sm: 'px-3 py-1.5 text-sm',
-    md: 'px-5 py-3 text-base',
-    lg: 'px-8 py-4 text-lg',
-  };
-
   return (
-    <motion.button
-      whileHover={{ scale: 1.02, y: -2 }}
-      whileTap={{ scale: 0.98 }}
-      transition={{ type: "spring", stiffness: 400, damping: 25 }}
-      className={cn(
-        'relative inline-flex items-center justify-center font-semibold rounded-xl border transition-colors',
-        variants[variant],
-        sizes[size],
-        className
-      )}
+    <button
       {...props}
+      disabled={disabled}
+      className={cn(
+        'inline-flex items-center justify-center gap-2 cursor-pointer',
+        'transition-all duration-150 ease-out',
+        'active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400',
+        'disabled:opacity-40 disabled:cursor-not-allowed disabled:active:scale-100',
+        variantClass[variant],
+        sizeClass[size],
+        className,
+      )}
     >
       {children}
-    </motion.button>
+    </button>
   );
 }

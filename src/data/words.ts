@@ -1,12 +1,6 @@
-export type Word = { 
-  word: string; 
-  def: string; 
-  ex: string; 
-  pos: string; 
-  roots?: { root: string; meaning: string }[];
-  synonyms?: string[];
-  antonyms?: string[];
-};
+import type { Word } from '../types/vocab';
+
+export type { Word };
 
 export const WORDS: Word[] = [
   {

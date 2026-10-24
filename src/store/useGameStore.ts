@@ -1,8 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { v4 as uuidv4 } from 'uuid';
-
-
+import { saveToCloud, loadFromCloud as fetchFromCloud } from '../lib/api';
+import { BOX_INTERVALS_DAYS } from '../lib/srs';
 
 export interface WordMastery {
   correct: number;
@@ -47,19 +46,24 @@ interface GameState {
   loadFromCloud: (targetUid: string) => Promise<boolean>;
 }
 
-const calculateNextInterval = (currentInterval: number = 0, isCorrect: boolean) => {
-  if (!isCorrect) return 1; // Reset to 1 day on failure
-  if (currentInterval === 0) return 1;
-  if (currentInterval === 1) return 3;
-  if (currentInterval === 3) return 7;
-  if (currentInterval === 7) return 14;
-  return 30; // Max 30 days
+const calculateNextInterval = (currentInterval: number = 0, isCorrect: boolean): number => {
+  if (!isCorrect) return 1;
+  const schedule = [BOX_INTERVALS_DAYS[1], BOX_INTERVALS_DAYS[2], BOX_INTERVALS_DAYS[3], BOX_INTERVALS_DAYS[4], BOX_INTERVALS_DAYS[5]];
+  const next = schedule.find((days) => days > currentInterval);
+  return next ?? BOX_INTERVALS_DAYS[5];
+};
+
+const generateUid = (): string => {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
+  }
+  return Math.random().toString(36).substring(2, 15);
 };
 
 export const useGameStore = create<GameState>()(
   persist(
     (set, get) => ({
-      uid: uuidv4(),
+      uid: generateUid(),
       username: `Scholar_${Math.floor(Math.random() * 10000)}`,
       xp: 0,
       level: 1,
@@ -136,10 +140,7 @@ export const useGameStore = create<GameState>()(
 
         const today = new Date().toISOString().split('T')[0];
         const isNewDay = state.lastDailyDate !== today;
-        let newDailyProgress = isNewDay ? 0 : state.dailyProgress;
-        
-        // We will increment daily progress directly from GameScreen or here if we pass mode.
-        // Wait, recordAnswer doesn't know the mode. We can add an incrementDaily action instead.
+        const newDailyProgress = isNewDay ? 0 : state.dailyProgress;
 
         return {
           totalAnswered: state.totalAnswered + 1,
@@ -178,33 +179,16 @@ export const useGameStore = create<GameState>()(
       syncToCloud: async () => {
         const state = get();
         if (!state.uid) return;
-        try {
-          await fetch('/api/save', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ uid: state.uid, state })
-          });
-        } catch (e) {
-          console.error("Cloud save failed:", e);
-        }
+        await saveToCloud(state.uid, state as unknown as Record<string, unknown>);
       },
 
       loadFromCloud: async (targetUid) => {
-        try {
-          const res = await fetch(`/api/save?uid=${targetUid}`);
-          if (res.ok) {
-            const { data } = await res.json();
-            if (data) {
-              const parsed = typeof data === 'string' ? JSON.parse(data) : data;
-              get().hydrateState(parsed);
-              return true;
-            }
-          }
-          return false;
-        } catch (e) {
-          console.error("Cloud load failed:", e);
-          return false;
+        const data = await fetchFromCloud(targetUid);
+        if (data) {
+          get().hydrateState(data as Partial<GameState>);
+          return true;
         }
+        return false;
       },
       
       unlockAchievement: (id) => set((state) => {

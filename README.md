@@ -1,127 +1,148 @@
-# SAT Vocab Game
+# SAT Vocab Quest 🚀
 
-> A stupidly simple way to actually remember SAT words. Built because I was tired of staring at Quizlet flashcards until my eyes glazed over.
+A fast, no-nonsense web game I built to help myself (and anyone else suffering through the Digital SAT) actually memorize vocabulary without falling asleep.
 
-[Live Demo](https://sat-vocab-game.vercel.app) · [Report Bug](https://github.com/shouryasharan7-netizen/sat-vocab-game/issues) · [Request Feature](https://github.com/shouryasharan7-netizen/sat-vocab-game/issues)
+Built for **Hack Club Stardance**.
+
+- **Live Site**: [satvocab.xyz](https://satvocab.xyz)
+- **Offline / PWA**: Installable on iOS/Android or desktop directly from your browser.
 
 ---
 
-## The Problem
+## Why I Built This
 
-I was helping my cousin prep for the Digital SAT and realized every vocab app falls into one of two camps:
+I was studying for the Digital SAT reading and writing section, and every vocab tool I found was either:
+1. Locked behind a $35/year subscription (looking at you, Quizlet Plus).
+2. Clunky and boring — flipping plain text cards where you just look at the word, nod, flip it, pretend you knew it, and move on.
 
-1. **Corporate hell** — expensive, bloated, and somehow still looks like it was designed in 2012
-2. **Flashcard purgatory** — open Quizlet, scroll, flip, scroll, flip, retain nothing, repeat
+The real Digital SAT doesn't just ask for a dictionary definition. It throws high-difficulty words like *aberration*, *sycophant*, or *pragmatic* into dense science or history paragraphs. If you only memorize words in isolation, you freeze up during the test.
 
-The SAT doesn't test whether you can memorize a definition. It tests whether you recognize a word *in context* — buried in some dense passage about 19th-century botany or whatever. Most apps don't train that. This one tries to.
+I wanted something that felt like an arcade game, ran super fast on my phone during bus rides, worked completely offline, and had real spaced repetition built in so I wouldn't waste time reviewing words I already mastered.
 
-## What It Actually Does
+---
 
-It's a browser-based vocab trainer with a few game modes that force you to engage with words instead of just passively reading them:
+## Game Modes
 
-- **Definition Match** — classic "what does this word mean," but with a twist: wrong answers are intentionally close. If the word is *benevolent*, one of the distractors is *belligerent*. You actually have to know the difference.
-- **Context Clues** — fill-in-the-blank sentences that feel like real SAT reading passages. Not "The ___ dog barked." More like "The scientist's pragmatic approach contrasted sharply with her colleague's quixotic ambitions."
-- **Speed Run** — 60 seconds. As many correct answers as you can handle. Good for panic-training your brain to recognize words under pressure.
-- **Word Scramble** — unscramble the letters. Sounds simple, but it's weirdly effective for locking in spelling patterns, which helps with recognition.
-- **Flashcards** — okay, yes, there are flashcards. But they track which ones you get wrong and surface them more often. No more scrolling past words you already know.
-- **Review Weak Words** — a dedicated mode that only shows you words you've missed. No fluff.
+- **Definition Match**: Rapid-fire multiple choice. The distractors are chosen to be close enough that you actually have to read carefully.
+- **Context Clues**: Fill-in-the-blank sentences styled like real Digital SAT reading passages (science, history, literature, economics).
+- **Speed Run**: 60 seconds on the clock. Score as many points as you can to build quick recognition under pressure.
+- **Word Scramble**: Unscramble the letters against the clock. Really good for locking down spelling and root structures.
+- **Flashcards**: Quick-flip 3D cards with "Got It" and "Need Review" buttons that plug straight into the Leitner scheduler.
+- **Smart Review**: A filtered deck showing only the words you've missed or that are due for review based on your Leitner intervals.
+- **Community Hardest**: Pulls the top 50 most frequently missed words from players globally.
 
-There's also a spaced repetition system running under the hood. Miss a word a few times and it'll haunt you at just the right intervals until you actually know it.
+---
 
-## Tech Stack
+## How the Spaced Repetition Works
 
-I built this with stuff I actually like using:
+The game uses a classic **Leitner 6-Box System** (`src/lib/srs.ts`):
 
-- **Next.js 14** — App Router, because I'm a masochist who enjoys bleeding-edge React patterns
-- **React + TypeScript** — type safety saves me from myself at 2 AM
-- **Tailwind CSS** — I can't design, but I can copy a color palette and pretend
-- **Framer Motion** — animations that don't feel like a PowerPoint from 2004
-- **Lucide Icons** — no emojis in the UI. I have standards. Low standards, but standards.
-- **localStorage** — your progress lives in your browser. No accounts, no tracking, no "sign up for premium to unlock the letter Z."
+| Box | Review Interval | Status |
+|:---:|:---|:---|
+| **0** | Today / Immediate | New or recently missed |
+| **1** | 1 day | Learning |
+| **2** | 3 days | Review |
+| **3** | 7 days | Retaining |
+| **4** | 14 days | Strong |
+| **5** | 30 days | Mastered ✨ |
 
-## Screenshots
+- When you get a word **right**, it advances up one box.
+- When you get a word **wrong**, it immediately resets to Box 0 so you review it again.
+- Once a word hits Box 5, you earn the "Mastered" trophy and confetti burst.
 
-<div align="center">
-  <img src="screenshots/1.jpg" alt="Home Screen" width="80%" style="margin-bottom: 20px" />
-  
-  <br/>
-  
-  <img src="screenshots/2.jpg" alt="Definition Match" width="45%" />
-  <img src="screenshots/3.jpg" alt="Word Details" width="45%" />
-  
-  <br/>
-  <br/>
+All progress saves directly to your browser's `localStorage` instantly. If you switch between your phone and laptop, you can generate a 6-digit sync code in the app to mirror your save without creating an account.
 
-  <img src="screenshots/4.jpg" alt="Contrast Match" width="45%" />
-  <img src="screenshots/5.jpg" alt="Smart Review" width="45%" />
-</div>
+---
 
-## Getting Started
+## Tech Stack & Architecture
 
-If you want to run this locally or mess with the code:
+I wanted this project to be as clean, lightweight, and dependency-free as possible. No heavy bloated libraries:
+
+- **Frontend**: React 19 + TypeScript + Vite.
+- **Styling**: Tailwind CSS v4. All animations (screen transitions, card flips, button taps) use native CSS transitions and keyframes instead of heavy animation bundles.
+- **Audio**: Web Audio API (`src/lib/sound.ts`). All sound effects (correct chimes, error buzzers, streak fanfares) are procedurally synthesized using audio oscillators and gain envelopes. Zero audio files or MP3 downloads.
+- **State**: Zustand with localStorage persistence.
+- **Backend (Optional / Serverless)**:
+  - Vercel Serverless Functions (`api/`)
+  - Upstash Redis for the global leaderboard, anti-cheat XP validation, and device sync.
+  - The app works 100% offline even without the backend.
+- **Bundle Weight**: ~230 KB total gzipped. Runs smoothly on any low-end school Chromebook or mobile device.
+
+---
+
+## Project Structure
+
+```text
+sat-vocab-game/
+├── api/                  # Serverless routes for leaderboard, sync & anti-cheat
+├── public/               # PWA icons, manifest & soundless static assets
+├── src/
+│   ├── components/
+│   │   ├── game-modes/   # Quiz, Flashcard, Scramble, Contrast modes
+│   │   ├── screens/      # HomeScreen, GameScreen, ResultsScreen, ReviewScreen, LeaderboardScreen
+│   │   └── ui/           # Buttons, Cards, Modals, Particle Canvas
+│   ├── data/             # 1,000+ curated SAT vocabulary words with context sentences
+│   ├── hooks/            # useGameLoop (turn timer and round timing)
+│   ├── lib/
+│   │   ├── api.ts        # Cloud sync client
+│   │   ├── sound.ts      # Procedural Web Audio API sound engine
+│   │   ├── srs.ts        # Leitner box spaced repetition calculation
+│   │   └── utils.ts      # Clean cn() class merger
+│   ├── types/            # TypeScript contracts for words, cards & game state
+│   ├── App.tsx           # Screen routing & modal coordination
+│   ├── main.tsx          # Root mount & PWA service worker registration
+│   └── index.css         # Tailwind directives, theme variables & CSS keyframes
+├── package.json
+└── vite.config.ts
+```
+
+---
+
+## Running Locally
+
+Requirements: Node.js 18+
 
 ```bash
-# Clone it
+# 1. Clone the repo
 git clone https://github.com/shouryasharan7-netizen/sat-vocab-game.git
 cd sat-vocab-game
 
-# Install dependencies
+# 2. Install dependencies
 npm install
 
-# Run the dev server
+# 3. Start development server
 npm run dev
-
-# Open http://localhost:3000
 ```
 
-That's it. No environment variables. No database setup. No Docker. Just vibes.
+Open [http://localhost:5173](http://localhost:5173) in your browser.
 
-## The Word List
-
-Currently sitting at around 1000+ words, all hand-picked from high-frequency SAT lists and actual College Board practice tests. I'm slowly expanding it — the goal is 800+ with proper difficulty tiers (Common / Advanced / Obscure) and etymology breakdowns.
-
-If you want to add words, check out `src/data/words.ts` (or wherever the word list lives in your repo). The format is pretty self-explanatory:
-
-```typescript
-{
-  word: "aberration",
-  definition: "a departure from what is normal or expected",
-  example: "The sudden snowstorm in April was an aberration.",
-  difficulty: "advanced",
-  tags: ["official-sat", "common-root"]
-}
+To test the production build:
+```bash
+npm run build
+npm run preview
 ```
-
-## What's Next
-
-Things I want to add but haven't had the time / energy / caffeine for yet:
-
-- [ ] **Audio pronunciation** — Web Speech API is free and surprisingly decent
-- [ ] **Passage Mode** — actual SAT-style paragraphs with vocab questions embedded
-- [ ] **Anki export** — for the power users who want to take their weak words elsewhere
-- [ ] **Daily Challenge** — everyone gets the same 10 words, compete for speed/accuracy
-- [ ] **SEO pages** — `/words/aberration` so Google actually finds this thing
-- [ ] **Dark mode polish** — it's dark by default but some of the contrast ratios are... questionable
-
-## Contributing
-
-Found a bug? Word definition that's slightly off? A game mode that feels like torture in a bad way? Open an issue or PR. I'm not precious about the code.
-
-If you're adding words, please include:
-- A real SAT-style context sentence (not "The cat was very [word]")
-- At least one solid distractor for Definition Match mode
-- The difficulty tier you think it belongs in
-
-## Why Is This Free?
-
-Because SAT prep is already expensive enough. Books, tutors, registration fees — the last thing students need is another $10/month subscription for a vocab app.
-
-If this helped you and you want to say thanks, just share it with someone who's studying. Or star the repo. Or both. Whatever.
-
-## License
-
-MIT. Do whatever you want. Build a competitor. Fork it for the GRE. Turn it into a drinking game where you take a shot for every wrong answer. I don't care. Just don't sell the exact same thing and claim you built it from scratch, because that's lame.
 
 ---
 
-*Built by someone who once misspelled "occurrence" three times in a row and decided to fix the system instead of just studying harder.*
+## Adding More Words
+
+Words live in `src/data/words.ts`. Each entry follows this format:
+
+```typescript
+{
+  word: "capricious",
+  def: "given to sudden and unaccountable changes of mood or behavior; fickle",
+  ex: "The capricious weather ruined our plans for an outdoor graduation.",
+  pos: "adjective",
+  synonyms: ["fickle", "volatile", "unpredictable"],
+  antonyms: ["stable", "constant"]
+}
+```
+
+If you spot a typo or want to submit extra words or etymology roots, feel free to open a PR!
+
+---
+
+## License
+
+MIT License. Free to use, fork, study, or adapt for other exams (GRE, ACT, TOEFL).

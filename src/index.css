@@ -23,6 +23,10 @@
 }
 
 @layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
   body {
     background-color: var(--color-bg);
     color: var(--color-text-main);
@@ -36,13 +40,6 @@
     font-family: var(--font-sans);
     font-weight: 700;
     letter-spacing: -0.02em;
-  }
-
-  /* Hide cursor on desktop */
-  @media (pointer: fine) {
-    *, *::before, *::after {
-      cursor: none !important;
-    }
   }
 
   ::selection {
@@ -76,7 +73,7 @@
   }
 }
 
-/* Custom Scrollbar override if needed, though Lenis handles smooth scrolling */
+/* Custom Scrollbar */
 ::-webkit-scrollbar {
   width: 8px;
 }
@@ -108,4 +105,30 @@
 }
 .rotate-y-180 {
   transform: rotateY(180deg);
+}
+
+/* CSS Screen and Fade Transitions */
+@keyframes fadeSlide {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.screen-fade {
+  animation: fadeSlide 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes shakeAnim {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-8px); }
+  40%, 80% { transform: translateX(8px); }
+}
+
+.shake {
+  animation: shakeAnim 0.35s ease-in-out;
 }

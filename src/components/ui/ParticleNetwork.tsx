@@ -2,12 +2,12 @@ import { useEffect, useRef } from 'react';
 
 export function ParticleNetwork() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  
-  if (typeof window !== 'undefined' && window.innerWidth < 768) {
-    return null;
-  }
 
   useEffect(() => {
+    if (typeof window === 'undefined' || window.innerWidth < 768) {
+      return;
+    }
+
     // Disable on reduced motion
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
       return;
@@ -24,9 +24,7 @@ export function ParticleNetwork() {
     let width = 0;
     let height = 0;
     
-    // Desktop: 50, Mobile: 25
-    const isMobile = window.innerWidth < 768;
-    const PARTICLE_COUNT = isMobile ? 25 : 50;
+    const PARTICLE_COUNT = 50;
     const CONNECTION_DISTANCE = 100;
     
     let mouse = { x: -1000, y: -1000 };
@@ -41,7 +39,7 @@ export function ParticleNetwork() {
       constructor() {
         this.x = Math.random() * width;
         this.y = Math.random() * height;
-        this.vx = (Math.random() - 0.5) * 0.4; // 0.2px/frame roughly
+        this.vx = (Math.random() - 0.5) * 0.4;
         this.vy = (Math.random() - 0.5) * 0.4;
         this.radius = 1.5;
       }
@@ -62,7 +60,6 @@ export function ParticleNetwork() {
         if (distSq < repelRadius * repelRadius) {
           const dist = Math.sqrt(distSq);
           const force = (repelRadius - dist) / repelRadius;
-          // strength 0.3
           this.x -= (dx / dist) * force * 0.3 * 5;
           this.y -= (dy / dist) * force * 0.3 * 5;
         }
@@ -147,7 +144,7 @@ export function ParticleNetwork() {
   return (
     <canvas
       ref={canvasRef}
-      className="fixed inset-0 w-full h-full pointer-events-none z-0"
+      className="fixed inset-0 w-full h-full pointer-events-none z-0 hidden md:block"
     />
   );
 }

@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useRef, lazy, Suspense } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import confetti from 'canvas-confetti';
 import { useGameStore } from '../../store/useGameStore';
 import { WORDS, type Word } from '../../data/words';
-import { Button, cn } from '../ui/Button';
+import { Button } from '../ui/Button';
+import { cn } from '../../lib/utils';
+import { playCorrectBeep, playErrorBuzzer, playStreakFanfare } from '../../lib/sound';
+import { useGameLoop } from '../../hooks/useGameLoop';
 import { ArrowLeft, Flame, Star, ListChecks } from 'lucide-react';
 
 const FlashcardMode = lazy(() => import('../game-modes/FlashcardMode'));
@@ -22,11 +24,14 @@ export function GameScreen({ mode, difficultyFilter = 'All', onEndGame }: GameSc
   const [questions, setQuestions] = useState<Word[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [score, setScore] = useState(0);
-  const [timeLeft, setTimeLeft] = useState(60);
+  const [countdown, setCountdown] = useState<number | null>(mode === 'speed' ? 3 : null);
+  const { timeLeft } = useGameLoop({
+    totalSeconds: 60,
+    isTimed: mode === 'speed' && countdown === null,
+  });
   const [wrongWords, setWrongWords] = useState<string[]>([]);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const sessionXpRef = useRef(0);
-  const [countdown, setCountdown] = useState<number | null>(mode === 'speed' ? 3 : null);
   
   const [answered, setAnswered] = useState(false);
   const [selectedWord, setSelectedWord] = useState<string | null>(null);
@@ -39,9 +44,9 @@ export function GameScreen({ mode, difficultyFilter = 'All', onEndGame }: GameSc
   const [contrastTarget, setContrastTarget] = useState<'synonym' | 'antonym'>('synonym');
   const [contrastOptions, setContrastOptions] = useState<{text: string, isCorrect: boolean}[]>([]);
   
-  // New states for streak overlays and shaking
+  // States for streak overlays and shaking
   const [streakOverlay, setStreakOverlay] = useState<string | null>(null);
-  const [shakeTrigger, setShakeTrigger] = useState(0);
+  const [isShaking, setIsShaking] = useState(false);
 
   useEffect(() => {
     const getWeightedWords = (count: number) => {
@@ -91,7 +96,6 @@ export function GameScreen({ mode, difficultyFilter = 'All', onEndGame }: GameSc
             const communityWords = data.words.map((w: any) => WORDS.find(word => word.word === w.word)).filter(Boolean);
             selected = [...communityWords];
           }
-          // Fill the rest with weighted random words if we don't have 10 community words
           if (selected.length < 10) {
             const fill = getWeightedWords(10 - selected.length).filter(w => !selected.find(s => s.word === w.word));
             selected = [...selected, ...fill].slice(0, 10);
@@ -125,13 +129,9 @@ export function GameScreen({ mode, difficultyFilter = 'All', onEndGame }: GameSc
     
     const q = questions[currentIndex];
     
-    if (mode === 'quiz' || mode === 'context' || mode === 'speed') {
+    if (mode === 'quiz' || mode === 'context' || mode === 'speed' || mode === 'daily' || mode === 'community') {
       const wrong = [...WORDS].filter(w => w.word !== q.word).sort(() => Math.random() - 0.5).slice(0, 3);
       setOptions([...wrong, q].sort(() => Math.random() - 0.5));
-    }
-    
-    if (mode === 'scramble') {
-      // autoFocus handles this inside ScrambleMode now
     }
     
     if (mode === 'contrast') {
@@ -163,20 +163,6 @@ export function GameScreen({ mode, difficultyFilter = 'All', onEndGame }: GameSc
     }
   }, [countdown]);
 
-  useEffect(() => {
-    if (mode !== 'speed' || countdown !== null) return;
-    const timer = setInterval(() => {
-      setTimeLeft(prev => {
-        if (prev <= 0.1) {
-          clearInterval(timer);
-          return 0;
-        }
-        return prev - 0.1;
-      });
-    }, 100);
-    return () => clearInterval(timer);
-  }, [mode, countdown]);
-
   const scoreRef = useRef(score);
   const wrongWordsRef = useRef(wrongWords);
   useEffect(() => { scoreRef.current = score; }, [score]);
@@ -197,7 +183,6 @@ export function GameScreen({ mode, difficultyFilter = 'All', onEndGame }: GameSc
   }, [currentIndex, questions.length, mode]);
 
   const endGameSession = async (finalScore: number, total: number, mistakes: string[]) => {
-    // 1. Report Analytics
     if (mistakes.length > 0) {
       fetch('/api/analytics', {
         method: 'POST',
@@ -206,7 +191,6 @@ export function GameScreen({ mode, difficultyFilter = 'All', onEndGame }: GameSc
       }).catch(console.error);
     }
 
-    // 2. Commit XP securely
     if (sessionId && sessionXpRef.current > 0) {
       await fetch('/api/game', {
         method: 'POST',
@@ -222,9 +206,7 @@ export function GameScreen({ mode, difficultyFilter = 'All', onEndGame }: GameSc
       }).catch(console.error);
     }
 
-    // 3. Save cloud state
     store.syncToCloud();
-
     onEndGame(finalScore, total, mistakes);
   };
 
@@ -261,9 +243,11 @@ export function GameScreen({ mode, difficultyFilter = 'All', onEndGame }: GameSc
     
     if (mode === 'daily') store.incrementDaily();
     
+    playCorrectBeep();
     triggerConfetti(e);
     
     if (oldStreak === 4) {
+      playStreakFanfare();
       showStreakOverlay('UNSTOPPABLE');
     }
 
@@ -275,6 +259,7 @@ export function GameScreen({ mode, difficultyFilter = 'All', onEndGame }: GameSc
   };
 
   const handleWrong = (word: string, _actualWord?: Word, noDelay: boolean = false) => {
+    playErrorBuzzer();
     if (store.streak >= 5) {
       showStreakOverlay('BROKEN');
     }
@@ -284,7 +269,8 @@ export function GameScreen({ mode, difficultyFilter = 'All', onEndGame }: GameSc
     
     if (mode === 'daily') store.incrementDaily();
     
-    setShakeTrigger(prev => prev + 1); // trigger shake animation
+    setIsShaking(true);
+    setTimeout(() => setIsShaking(false), 400);
     
     if (!noDelay && mode !== 'flashcard' && mode !== 'context') {
       setTimeout(() => nextQuestion(), 1500);
@@ -335,17 +321,12 @@ export function GameScreen({ mode, difficultyFilter = 'All', onEndGame }: GameSc
   if (countdown !== null) {
     return (
       <div className="flex-1 flex flex-col pt-12 items-center justify-center px-4 relative z-10 w-full min-h-screen">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={countdown}
-            initial={{ scale: 0.5, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1, transition: { type: "spring", bounce: 0.5, duration: 0.6 } }}
-            exit={{ scale: 2, opacity: 0, transition: { duration: 0.3 } }}
-            className="text-[12rem] font-black text-white drop-shadow-[0_0_60px_rgba(255,255,255,0.3)] tabular-nums"
-          >
-            {countdown > 0 ? countdown : 'GO!'}
-          </motion.div>
-        </AnimatePresence>
+        <div 
+          key={countdown}
+          className="text-[12rem] font-black text-white drop-shadow-[0_0_60px_rgba(255,255,255,0.3)] tabular-nums screen-fade"
+        >
+          {countdown > 0 ? countdown : 'GO!'}
+        </div>
       </div>
     );
   }
@@ -358,19 +339,16 @@ export function GameScreen({ mode, difficultyFilter = 'All', onEndGame }: GameSc
   if (timeLeft < 10) timerColor = "#f43f5e"; // rose
 
   return (
-    <motion.div 
-      initial={{ opacity: 0, scale: 0.98, filter: "blur(10px)" }}
-      animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
-      exit={{ opacity: 0, scale: 0.98, filter: "blur(10px)" }}
-      transition={{ type: "spring", stiffness: 350, damping: 25, mass: 0.5 }}
-      className="max-w-3xl mx-auto w-full px-4 py-4 md:py-8 relative z-10 min-h-screen flex flex-col pt-8"
-    >
+    <div className="max-w-3xl mx-auto w-full px-4 py-4 md:py-8 relative z-10 min-h-screen flex flex-col pt-8 screen-fade">
+      {/* Top progress line */}
       <div className="absolute top-0 left-0 right-0 h-1.5 bg-white/5 overflow-hidden rounded-t-lg">
         <div 
-          className="h-full bg-gradient-to-r from-emerald-500 via-sky-500 to-indigo-500 transition-all duration-500 ease-out" 
+          className="h-full bg-gradient-to-r from-emerald-500 via-sky-500 to-indigo-500 transition-all duration-300 ease-out" 
           style={{ width: `${mode === 'speed' ? (currentIndex / 50) * 100 : (currentIndex / questions.length) * 100}%` }} 
         />
       </div>
+
+      {/* Screen Header */}
       <div className="flex justify-between items-start md:items-center mb-4 md:mb-8 gap-4 mt-2">
         <Button variant="secondary" size="sm" onClick={() => endGameSession(score, currentIndex, wrongWords)} className="gap-2 glass-pill text-zinc-300 hover:text-white shrink-0">
           <ArrowLeft className="w-4 h-4" /> <span className="hidden sm:inline">Quit</span>
@@ -382,24 +360,20 @@ export function GameScreen({ mode, difficultyFilter = 'All', onEndGame }: GameSc
               <Flame className={cn("w-4 h-4 transition-all duration-300", store.streak > 0 ? "text-amber-500 animate-pulse drop-shadow-[0_0_8px_rgba(245,158,11,0.8)] scale-110" : "text-zinc-400")} /> 
               <span className={cn("font-bold", store.streak > 0 && "text-amber-400")}>{store.streak}</span>
             </div>
+            
             {/* Cinematic Overlay */}
-            <AnimatePresence>
-              {streakOverlay && (
-                <motion.div
-                  initial={{ opacity: 0, y: 10, scale: 0.8 }}
-                  animate={{ opacity: 1, y: -30, scale: 1 }}
-                  exit={{ opacity: 0, y: -40, scale: 1.1 }}
-                  className={cn(
-                    "absolute top-0 left-1/2 -translate-x-1/2 font-black text-xl tracking-widest whitespace-nowrap drop-shadow-[0_0_15px_rgba(255,255,255,0.5)]",
-                    streakOverlay === 'UNSTOPPABLE' ? "text-amber-400" : "text-rose-500"
-                  )}
-                  role="status"
-                  aria-live="polite"
-                >
-                  {streakOverlay}
-                </motion.div>
-              )}
-            </AnimatePresence>
+            {streakOverlay && (
+              <div
+                className={cn(
+                  "absolute top-0 left-1/2 -translate-x-1/2 font-black text-xl tracking-widest whitespace-nowrap drop-shadow-[0_0_15px_rgba(255,255,255,0.5)] screen-fade -translate-y-8",
+                  streakOverlay === 'UNSTOPPABLE' ? "text-amber-400" : "text-rose-500"
+                )}
+                role="status"
+                aria-live="polite"
+              >
+                {streakOverlay}
+              </div>
+            )}
           </div>
 
           <div className="flex items-center gap-1.5 glass-pill px-3 py-1.5 text-zinc-200">
@@ -417,7 +391,7 @@ export function GameScreen({ mode, difficultyFilter = 'All', onEndGame }: GameSc
           <div className={cn("relative w-24 h-24 flex items-center justify-center", timeLeft <= 10 && "animate-pulse")}>
             <svg className="absolute inset-0 w-full h-full -rotate-90">
               <circle cx="48" cy="48" r="45" stroke="rgba(255,255,255,0.06)" strokeWidth="6" fill="transparent" />
-              <motion.circle 
+              <circle 
                 cx="48" cy="48" r="45" 
                 stroke={timerColor}
                 strokeWidth="6" 
@@ -436,33 +410,22 @@ export function GameScreen({ mode, difficultyFilter = 'All', onEndGame }: GameSc
         </div>
       )}
 
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={currentIndex}
-          initial={{ opacity: 0, x: 40 }}
-          animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0, x: -40 }}
-          transition={{ duration: 0.3, ease: 'easeOut' }}
-          className="flex-1 flex flex-col justify-center pb-20"
-        >
-          <motion.div
-            animate={shakeTrigger ? { x: [-10, 10, -10, 10, 0] } : {}}
-            transition={{ duration: 0.4 }}
-          >
-            <Suspense fallback={<div className="min-h-[400px] flex items-center justify-center"><div className="w-8 h-8 rounded-full border-4 border-emerald-500 border-t-transparent animate-spin" /></div>}>
-              {mode === 'flashcard' ? (
-                <FlashcardMode q={q} isFlipped={isFlipped} setIsFlipped={setIsFlipped} handleWrong={handleWrong} handleCorrect={handleCorrect} />
-              ) : mode === 'scramble' ? (
-                <ScrambleMode q={q} answered={answered} scrambleInput={scrambleInput} setScrambleInput={setScrambleInput} onScrambleSubmit={onScrambleSubmit} />
-              ) : mode === 'contrast' ? (
-                <ContrastMode q={q} contrastTarget={contrastTarget} contrastOptions={contrastOptions} answered={answered} onContrastSubmit={onContrastSubmit} />
-              ) : (
-                <StandardQuizMode q={q} mode={mode} options={options} answered={answered} selectedWord={selectedWord} onAnswerQuiz={onAnswerQuiz} thematicTag={thematicTag} nextQuestion={nextQuestion} />
-              )}
-            </Suspense>
-          </motion.div>
-        </motion.div>
-      </AnimatePresence>
-    </motion.div>
+      {/* Main Question Container */}
+      <div key={currentIndex} className="flex-1 flex flex-col justify-center pb-20 screen-fade">
+        <div className={cn(isShaking && "shake")}>
+          <Suspense fallback={<div className="min-h-[400px] flex items-center justify-center"><div className="w-8 h-8 rounded-full border-4 border-emerald-500 border-t-transparent animate-spin" /></div>}>
+            {mode === 'flashcard' ? (
+              <FlashcardMode q={q} isFlipped={isFlipped} setIsFlipped={setIsFlipped} handleWrong={handleWrong} handleCorrect={handleCorrect} />
+            ) : mode === 'scramble' ? (
+              <ScrambleMode q={q} answered={answered} scrambleInput={scrambleInput} setScrambleInput={setScrambleInput} onScrambleSubmit={onScrambleSubmit} />
+            ) : mode === 'contrast' ? (
+              <ContrastMode q={q} contrastTarget={contrastTarget} contrastOptions={contrastOptions} answered={answered} onContrastSubmit={onContrastSubmit} />
+            ) : (
+              <StandardQuizMode q={q} mode={mode} options={options} answered={answered} selectedWord={selectedWord} onAnswerQuiz={onAnswerQuiz} thematicTag={thematicTag} nextQuestion={nextQuestion} />
+            )}
+          </Suspense>
+        </div>
+      </div>
+    </div>
   );
 }

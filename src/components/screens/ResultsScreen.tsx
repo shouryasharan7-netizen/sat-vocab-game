@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { useGameStore } from '../../store/useGameStore';
 import { ACHIEVEMENTS } from '../../data/achievements';
 import { Card } from '../ui/Card';
@@ -32,8 +31,7 @@ export function ResultsScreen({ score, total, mode, wrongWords, onContinue }: Re
         colors: ['#10b981', '#34d399', '#f59e0b', '#fbbf24']
       });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [mode, score, total, store]);
 
   const pct = total > 0 ? Math.round((score / total) * 100) : 0;
   
@@ -61,24 +59,13 @@ export function ResultsScreen({ score, total, mode, wrongWords, onContinue }: Re
   };
 
   return (
-    <motion.div 
-      initial={{ opacity: 0, scale: 0.98, filter: "blur(10px)" }}
-      animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
-      exit={{ opacity: 0, scale: 0.98, filter: "blur(10px)" }}
-      transition={{ type: "spring", stiffness: 350, damping: 25, mass: 0.5 }}
-      className="max-w-2xl mx-auto w-full px-4 py-12 relative z-10 min-h-[80vh] flex flex-col justify-center"
-    >
+    <div className="max-w-2xl mx-auto w-full px-4 py-12 relative z-10 min-h-[80vh] flex flex-col justify-center screen-fade">
       <Card className="text-center p-10 relative overflow-hidden mb-8 glass-card border-indigo-500/30">
         <div className="absolute top-0 right-0 w-64 h-64 bg-violet-500/10 rounded-full blur-[100px] pointer-events-none" />
         
-        <motion.div 
-          initial={{ scale: 0.5, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ type: "spring", bounce: 0.5, delay: 0.2 }}
-          className="text-6xl md:text-8xl font-black text-amber-400 tracking-tight drop-shadow-[0_0_30px_rgba(251,191,36,0.3)] mb-6 font-serif italic"
-        >
+        <div className="text-6xl md:text-8xl font-black text-amber-400 tracking-tight drop-shadow-[0_0_30px_rgba(251,191,36,0.3)] mb-6 font-serif italic">
           {mode === 'speed' ? `${score} pts` : `${score}/${total}`}
-        </motion.div>
+        </div>
         
         <div className="text-xl md:text-2xl text-white font-serif mb-12">{label}</div>
         
@@ -98,34 +85,28 @@ export function ResultsScreen({ score, total, mode, wrongWords, onContinue }: Re
           </div>
         </div>
 
-        <AnimatePresence>
-          {newAchievements.length > 0 && (
-            <motion.div 
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              className="mb-8 p-6 bg-amber-500/10 border border-amber-500/30 rounded-2xl text-left"
-            >
-              <div className="flex items-center gap-3 text-amber-400 font-bold mb-4 uppercase tracking-widest text-sm">
-                <Trophy className="w-5 h-5" /> New Achievements
-              </div>
-              <div className="grid grid-cols-1 gap-3">
-                {newAchievements.map(id => {
-                  const ach = ACHIEVEMENTS.find(a => a.id === id);
-                  if (!ach) return null;
-                  return (
-                    <div key={id} className="flex items-center gap-4 bg-black/40 p-4 rounded-xl border border-amber-500/20">
-                      <span className="text-3xl filter drop-shadow-md">{ach.icon}</span>
-                      <div>
-                        <div className="text-base font-bold text-white mb-1">{ach.name}</div>
-                        <div className="text-sm text-amber-200/70">{ach.desc}</div>
-                      </div>
+        {newAchievements.length > 0 && (
+          <div className="mb-8 p-6 bg-amber-500/10 border border-amber-500/30 rounded-2xl text-left screen-fade">
+            <div className="flex items-center gap-3 text-amber-400 font-bold mb-4 uppercase tracking-widest text-sm">
+              <Trophy className="w-5 h-5" /> New Achievements
+            </div>
+            <div className="grid grid-cols-1 gap-3">
+              {newAchievements.map(id => {
+                const ach = ACHIEVEMENTS.find(a => a.id === id);
+                if (!ach) return null;
+                return (
+                  <div key={id} className="flex items-center gap-4 bg-black/40 p-4 rounded-xl border border-amber-500/20">
+                    <span className="text-3xl filter drop-shadow-md">{ach.icon}</span>
+                    <div>
+                      <div className="text-base font-bold text-white mb-1">{ach.name}</div>
+                      <div className="text-sm text-amber-200/70">{ach.desc}</div>
                     </div>
-                  );
-                })}
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         {wrongWords.length > 0 && (
           <div className="text-left mt-8 pt-8 border-t border-white/10">
@@ -149,6 +130,6 @@ export function ResultsScreen({ score, total, mode, wrongWords, onContinue }: Re
           Continue <ArrowRight className="w-5 h-5 ml-2" />
         </Button>
       </div>
-    </motion.div>
+    </div>
   );
 }

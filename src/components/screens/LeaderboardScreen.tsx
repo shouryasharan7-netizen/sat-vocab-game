@@ -1,8 +1,8 @@
 import { useEffect, useState, useCallback } from 'react';
-import { motion } from 'framer-motion';
 import { useGameStore } from '../../store/useGameStore';
 import { Card } from '../ui/Card';
-import { Button, cn } from '../ui/Button';
+import { Button } from '../ui/Button';
+import { cn } from '../../lib/utils';
 import { ArrowLeft, Trophy, Medal, Crown, Edit2, Check, RefreshCw } from 'lucide-react';
 
 interface Player {
@@ -47,13 +47,7 @@ export function LeaderboardScreen({ onBack }: { onBack: () => void }) {
   };
 
   return (
-    <motion.div 
-      initial={{ opacity: 0, scale: 0.98, filter: "blur(10px)" }}
-      animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
-      exit={{ opacity: 0, scale: 0.98, filter: "blur(10px)" }}
-      transition={{ type: "spring", stiffness: 350, damping: 25, mass: 0.5 }}
-      className="max-w-4xl mx-auto w-full px-4 py-8 relative z-10 min-h-screen"
-    >
+    <div className="max-w-4xl mx-auto w-full px-4 py-8 relative z-10 min-h-screen screen-fade">
       <div className="flex justify-between items-center mb-10">
         <Button variant="secondary" size="sm" onClick={onBack} className="gap-2 glass-pill text-zinc-300 hover:text-white">
           <ArrowLeft className="w-4 h-4" /> Back
@@ -91,7 +85,7 @@ export function LeaderboardScreen({ onBack }: { onBack: () => void }) {
             ) : (
               <div className="flex items-center gap-2 mb-4">
                 <h2 className="text-2xl font-bold text-white font-serif">{store.username}</h2>
-                <button onClick={() => setIsEditingName(true)} className="p-1.5 text-zinc-400 hover:text-white transition-colors bg-white/5 rounded-md">
+                <button onClick={() => setIsEditingName(true)} className="p-1.5 text-zinc-400 hover:text-white transition-colors bg-white/5 rounded-md" aria-label="Edit username">
                   <Edit2 className="w-3.5 h-3.5" />
                 </button>
               </div>
@@ -123,7 +117,7 @@ export function LeaderboardScreen({ onBack }: { onBack: () => void }) {
                     key={tf}
                     onClick={() => setTimeframe(tf)}
                     className={cn(
-                      "px-3 py-1.5 text-xs font-bold rounded-md capitalize transition-colors whitespace-nowrap",
+                      "px-3 py-1.5 text-xs font-bold rounded-md capitalize transition-colors whitespace-nowrap cursor-pointer",
                       timeframe === tf ? "bg-indigo-500 text-white" : "text-zinc-400 hover:text-zinc-300"
                     )}
                   >
@@ -134,7 +128,7 @@ export function LeaderboardScreen({ onBack }: { onBack: () => void }) {
               <button 
                 onClick={fetchLeaderboard} 
                 disabled={loading}
-                className="flex items-center justify-center gap-2 text-xs font-bold text-zinc-400 hover:text-white transition-colors bg-white/5 px-3 py-1.5 rounded-lg disabled:opacity-50 w-full sm:w-auto"
+                className="flex items-center justify-center gap-2 text-xs font-bold text-zinc-400 hover:text-white transition-colors bg-white/5 px-3 py-1.5 rounded-lg disabled:opacity-50 w-full sm:w-auto cursor-pointer"
               >
                 <RefreshCw className={cn("w-3.5 h-3.5", loading && "animate-spin")} />
                 Refresh
@@ -159,11 +153,8 @@ export function LeaderboardScreen({ onBack }: { onBack: () => void }) {
                   else if (index === 2) { RankIcon = Medal; rankColor = "text-amber-700"; }
 
                   return (
-                    <motion.div 
+                    <div 
                       key={player.uid}
-                      initial={{ opacity: 0, x: 20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: index * 0.05 }}
                       className={cn(
                         "flex items-center gap-4 p-4 rounded-xl border transition-all",
                         isMe ? "bg-indigo-500/10 border-indigo-500/30 shadow-[0_0_15px_rgba(79,70,229,0.15)]" : "bg-black/20 border-white/5 hover:bg-black/40"
@@ -184,7 +175,7 @@ export function LeaderboardScreen({ onBack }: { onBack: () => void }) {
                         <div className="font-mono font-bold text-emerald-400 text-lg">{player.xp || 0}</div>
                         <div className="text-[10px] text-zinc-400 uppercase tracking-widest font-bold">XP</div>
                       </div>
-                    </motion.div>
+                    </div>
                   );
                 })}
               </div>
@@ -192,6 +183,6 @@ export function LeaderboardScreen({ onBack }: { onBack: () => void }) {
           </Card>
         </div>
       </div>
-    </motion.div>
+    </div>
   );
 }

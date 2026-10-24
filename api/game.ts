@@ -1,5 +1,4 @@
 import { Redis } from '@upstash/redis';
-import { v4 as uuidv4 } from 'uuid';
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
 const kv = Redis.fromEnv();
@@ -24,7 +23,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const { uid } = body;
         if (!uid) return res.status(400).json({ error: 'Missing uid' });
         
-        const sessionId = uuidv4();
+        const sessionId = crypto.randomUUID();
         // Store the session start time with a 1-hour expiry
         await kv.set(`game_session:${sessionId}`, { uid, startTime: Date.now() }, { ex: 3600 });
         

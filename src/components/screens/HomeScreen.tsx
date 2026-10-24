@@ -1,16 +1,17 @@
-import { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import gsap from 'gsap';
-import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { useState } from 'react';
 import { useGameStore } from '../../store/useGameStore';
-import { cn, Button } from '../ui/Button';
-import { Flame, Trophy, BookOpen, Zap, ScrollText, CheckCircle, Brain, RefreshCw, Smartphone } from 'lucide-react';
+import { Button } from '../ui/Button';
+import { cn } from '../../lib/utils';
+import { Flame, Trophy, BookOpen, Zap, ScrollText, CheckCircle, Brain, RefreshCw, Smartphone, X } from 'lucide-react';
 import { ParticleNetwork } from '../ui/ParticleNetwork';
-import { TiltCard } from '../ui/TiltCard';
 
-gsap.registerPlugin(ScrollTrigger);
+interface HomeScreenProps {
+  onStartGame: (mode: string, filter: string) => void;
+  onShowLeaderboard: () => void;
+  onShowReview: () => void;
+}
 
-export function HomeScreen({ onStartGame, onShowLeaderboard, onShowReview }: { onStartGame: (mode: string, filter: string) => void, onShowLeaderboard: () => void, onShowReview: () => void }) {
+export function HomeScreen({ onStartGame, onShowLeaderboard, onShowReview }: HomeScreenProps) {
   const store = useGameStore();
   const { level, xp, streak, dailyProgress, lastDailyDate } = store;
   const [filter, setFilter] = useState<'All' | 'Common' | 'Advanced' | 'Obscure'>('All');
@@ -28,17 +29,19 @@ export function HomeScreen({ onStartGame, onShowLeaderboard, onShowReview }: { o
   const prevXP = (level - 1) * 100;
   const progress = Math.max(0, Math.min(100, ((xp - prevXP) / (neededXP - prevXP)) * 100));
 
-  const sectionRef = useRef<HTMLDivElement>(null);
-
   const handleGenerateSync = async () => {
     try {
       setSyncError('');
       let currentUid = store.uid;
       if (!currentUid) {
-        currentUid = crypto.randomUUID();
+        currentUid = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2, 15);
         store.setUid(currentUid);
       }
-      const res = await fetch('/api/sync', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'generate', uid: currentUid }) });
+      const res = await fetch('/api/sync', { 
+        method: 'POST', 
+        headers: { 'Content-Type': 'application/json' }, 
+        body: JSON.stringify({ action: 'generate', uid: currentUid }) 
+      });
       const data = await res.json();
       if (data.code) setGeneratedCode(data.code);
       else setSyncError(data.error || 'Failed to generate code');
@@ -51,7 +54,11 @@ export function HomeScreen({ onStartGame, onShowLeaderboard, onShowReview }: { o
     if (syncCode.length !== 6) return;
     try {
       setSyncError('');
-      const res = await fetch('/api/sync', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'consume', code: syncCode }) });
+      const res = await fetch('/api/sync', { 
+        method: 'POST', 
+        headers: { 'Content-Type': 'application/json' }, 
+        body: JSON.stringify({ action: 'consume', code: syncCode }) 
+      });
       const data = await res.json();
       
       if (data.targetUid) {
@@ -71,43 +78,12 @@ export function HomeScreen({ onStartGame, onShowLeaderboard, onShowReview }: { o
       setSyncError('Network error');
     }
   };
-  
-  const xpRef = useRef<HTMLSpanElement>(null);
-  const streakRef = useRef<HTMLSpanElement>(null);
-  
-  useEffect(() => {
-    if (xpRef.current) {
-      gsap.fromTo(xpRef.current, { innerHTML: prevXP }, { innerHTML: xp, duration: 2, ease: 'expo.out', snap: { innerHTML: 1 } });
-    }
-    if (streakRef.current) {
-      gsap.fromTo(streakRef.current, { innerHTML: 0 }, { innerHTML: streak, duration: 1.5, ease: 'expo.out', snap: { innerHTML: 1 }, delay: 0.2 });
-    }
-  }, [xp, prevXP, streak]);
-
-  useEffect(() => {
-    if (sectionRef.current) {
-      const cards = sectionRef.current.querySelectorAll('.stagger-card');
-      gsap.fromTo(cards, 
-        { y: 40, opacity: 0 },
-        {
-          y: 0, 
-          opacity: 1, 
-          duration: 0.6, 
-          stagger: 0.08, 
-          ease: 'power3.out',
-          scrollTrigger: {
-            trigger: sectionRef.current,
-            start: 'top 85%',
-          }
-        }
-      );
-    }
-  }, []);
 
   return (
     <>
       <ParticleNetwork />
       
+      {/* Daily Banner */}
       <div className={cn(
         "w-full h-14 border-b flex items-center justify-center px-4 transition-colors z-20 relative",
         isDailyDone ? "border-emerald-500/20 bg-gradient-to-b from-emerald-500/5 to-transparent" : "border-violet-500/10 bg-gradient-to-b from-violet-500/5 to-transparent"
@@ -123,17 +99,18 @@ export function HomeScreen({ onStartGame, onShowLeaderboard, onShowReview }: { o
               />
             </div>
           )}
-          <span className={cn("text-sm font-medium", isDailyDone ? "text-emerald-400" : "text-zinc-300")}>
+          <span className={cn("text-sm font-medium", isDailyDone ? "text-emerald-400" : "text-zinc-200")}>
             {isDailyDone ? "Daily goal crushed" : "Complete 10 words today"}
           </span>
         </div>
       </div>
 
-      <div className="max-w-5xl mx-auto w-full px-4 py-24 relative z-10">
+      <div className="max-w-5xl mx-auto w-full px-4 py-24 relative z-10 screen-fade">
+        {/* Header */}
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-12 md:mb-24 gap-6 md:gap-8">
           <div>
             <h1 className="text-4xl md:text-6xl font-bold tracking-tight text-white mb-2">SAT Vocab Quest</h1>
-            <p className="text-zinc-400 text-lg">Master 1000+ Digital SAT words through play.</p>
+            <p className="text-zinc-300 text-lg">Master 1000+ Digital SAT words through play.</p>
           </div>
 
           <div className="flex flex-wrap gap-2 md:gap-4 items-center w-full justify-center md:justify-end">
@@ -146,17 +123,18 @@ export function HomeScreen({ onStartGame, onShowLeaderboard, onShowReview }: { o
               <span className="hidden sm:inline">Leaderboard</span>
             </Button>
 
-            <div className="relative w-12 h-12 flex items-center justify-center group">
+            {/* Level Radial */}
+            <div className="relative w-12 h-12 flex items-center justify-center group" title={`Level ${level} (${Math.round(progress)}%)`}>
               <svg className="absolute inset-0 w-full h-full -rotate-90">
                 <circle cx="24" cy="24" r="22" stroke="rgba(255,255,255,0.06)" strokeWidth="3" fill="transparent" />
-                <motion.circle 
+                <circle 
                   cx="24" cy="24" r="22" 
                   stroke="url(#levelGradient)" 
                   strokeWidth="3" 
                   fill="transparent" 
                   strokeDasharray="138"
                   strokeDashoffset={138 - (138 * progress) / 100}
-                  className="transition-all duration-1000 ease-out"
+                  className="transition-all duration-700 ease-out"
                 />
                 <defs>
                   <linearGradient id="levelGradient" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -170,28 +148,31 @@ export function HomeScreen({ onStartGame, onShowLeaderboard, onShowReview }: { o
               </div>
             </div>
 
-            <div className="glass-pill px-4 py-2 flex items-center gap-2 group hover:border-white/10 hover:scale-105 transition-all">
+            {/* XP Pill */}
+            <div className="glass-pill px-4 py-2 flex items-center gap-2 group hover:border-white/20 hover:scale-105 transition-all">
               <div className="text-zinc-400 text-xs font-medium uppercase tracking-widest">XP</div>
-              <span ref={xpRef} className="font-mono text-white text-base font-medium tabular-nums">{xp}</span>
+              <span className="font-mono text-white text-base font-medium tabular-nums">{xp}</span>
             </div>
 
-            <div className="glass-pill px-4 py-2 flex items-center gap-2 group hover:border-white/10 hover:scale-105 transition-all">
+            {/* Streak Pill */}
+            <div className="glass-pill px-4 py-2 flex items-center gap-2 group hover:border-white/20 hover:scale-105 transition-all">
               <Flame className="w-4 h-4 text-amber-500 animate-pulse drop-shadow-[0_0_8px_rgba(245,158,11,0.5)]" />
-              <span ref={streakRef} className="font-mono text-white text-base font-medium tabular-nums">{streak}</span>
+              <span className="font-mono text-white text-base font-medium tabular-nums">{streak}</span>
             </div>
           </div>
         </div>
 
-        <div className="mb-8 flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-          {['All', 'Common', 'Advanced', 'Obscure'].map(f => (
+        {/* Difficulty Filter */}
+        <div className="mb-8 flex gap-2 overflow-x-auto pb-2 scrollbar-hide" role="toolbar" aria-label="Difficulty filters">
+          {(['All', 'Common', 'Advanced', 'Obscure'] as const).map(f => (
             <button 
               key={f}
-              onClick={() => setFilter(f as any)}
+              onClick={() => setFilter(f)}
               className={cn(
-                "px-4 py-1.5 rounded-full text-sm transition-all whitespace-nowrap",
+                "px-4 py-1.5 rounded-full text-sm transition-all whitespace-nowrap cursor-pointer",
                 filter === f 
-                  ? "bg-white text-black font-semibold" 
-                  : "glass-pill text-zinc-400 hover:text-zinc-200"
+                  ? "bg-white text-black font-semibold shadow-md" 
+                  : "glass-pill text-zinc-300 hover:text-white hover:border-white/20"
               )}
             >
               {f === 'All' ? 'Study: All' : f}
@@ -199,163 +180,193 @@ export function HomeScreen({ onStartGame, onShowLeaderboard, onShowReview }: { o
           ))}
         </div>
 
-        <div ref={sectionRef} className="grid grid-cols-1 md:grid-cols-12 gap-4">
-          <div className="stagger-card md:col-span-8 h-full" style={{ minHeight: '220px' }}>
-            <TiltCard accentColor="emerald" onClick={() => onStartGame('quiz', filter)}>
-              <div className="p-6 h-full flex flex-col justify-between">
-                <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
-                  <CheckCircle className="w-6 h-6 stroke-[1.5]" aria-hidden="true" />
+        {/* Game Mode Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
+          {/* Definition Match */}
+          <div 
+            role="button"
+            tabIndex={0}
+            onClick={() => onStartGame('quiz', filter)}
+            onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && onStartGame('quiz', filter)}
+            className="md:col-span-8 glass-card p-6 min-h-[220px] flex flex-col justify-between cursor-pointer border border-white/10 hover:border-emerald-500/40 hover:bg-[#181818] hover:scale-[1.01] active:scale-[0.99] transition-all group"
+          >
+            <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 group-hover:scale-110 transition-transform">
+              <CheckCircle className="w-6 h-6 stroke-[1.5]" aria-hidden="true" />
+            </div>
+            <div>
+              <h2 className="font-bold text-2xl text-white mb-2 group-hover:text-emerald-300 transition-colors">Definition Match</h2>
+              <p className="text-sm text-zinc-300 line-clamp-2">Master precise meanings through rapid-fire multiple choice.</p>
+            </div>
+          </div>
+
+          {/* Context Clues */}
+          <div 
+            role="button"
+            tabIndex={0}
+            onClick={() => onStartGame('context', filter)}
+            onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && onStartGame('context', filter)}
+            className="md:col-span-4 glass-card p-6 min-h-[220px] flex flex-col justify-between cursor-pointer border border-white/10 hover:border-sky-500/40 hover:bg-[#181818] hover:scale-[1.01] active:scale-[0.99] transition-all group"
+          >
+            <div className="w-12 h-12 rounded-2xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-center text-sky-400 group-hover:scale-110 transition-transform">
+              <ScrollText className="w-6 h-6 stroke-[1.5]" aria-hidden="true" />
+            </div>
+            <div>
+              <h2 className="font-bold text-xl text-white mb-2 group-hover:text-sky-300 transition-colors">Context Clues</h2>
+              <p className="text-sm text-zinc-300 line-clamp-2">Fill in the blanks using sentence context.</p>
+            </div>
+          </div>
+
+          {/* Speed Run */}
+          <div 
+            role="button"
+            tabIndex={0}
+            onClick={() => onStartGame('speed', filter)}
+            onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && onStartGame('speed', filter)}
+            className="md:col-span-4 glass-card p-6 min-h-[220px] flex flex-col justify-between cursor-pointer border border-white/10 hover:border-amber-500/40 hover:bg-[#181818] hover:scale-[1.01] active:scale-[0.99] transition-all group"
+          >
+            <div className="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 group-hover:scale-110 transition-transform">
+              <Zap className="w-6 h-6 stroke-[1.5]" aria-hidden="true" />
+            </div>
+            <div>
+              <h2 className="font-bold text-xl text-white mb-2 group-hover:text-amber-300 transition-colors">Speed Run</h2>
+              <p className="text-sm text-zinc-300 line-clamp-2">Beat the clock. Tests quick recall and mastery.</p>
+            </div>
+          </div>
+
+          {/* Word Scramble */}
+          <div 
+            role="button"
+            tabIndex={0}
+            onClick={() => onStartGame('scramble', filter)}
+            onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && onStartGame('scramble', filter)}
+            className="md:col-span-4 glass-card p-6 min-h-[220px] flex flex-col justify-between cursor-pointer border border-white/10 hover:border-violet-500/40 hover:bg-[#181818] hover:scale-[1.01] active:scale-[0.99] transition-all group"
+          >
+            <div className="w-12 h-12 rounded-2xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center text-violet-400 group-hover:scale-110 transition-transform">
+              <RefreshCw className="w-6 h-6 stroke-[1.5]" aria-hidden="true" />
+            </div>
+            <div>
+              <h2 className="font-bold text-xl text-white mb-2 group-hover:text-violet-300 transition-colors">Word Scramble</h2>
+              <p className="text-sm text-zinc-300 line-clamp-2">Unscramble the letters to find the right word.</p>
+            </div>
+          </div>
+
+          {/* Flashcards */}
+          <div 
+            role="button"
+            tabIndex={0}
+            onClick={() => onStartGame('flashcard', filter)}
+            onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && onStartGame('flashcard', filter)}
+            className="md:col-span-4 glass-card p-6 min-h-[220px] flex flex-col justify-between cursor-pointer border border-white/10 hover:border-rose-500/40 hover:bg-[#181818] hover:scale-[1.01] active:scale-[0.99] transition-all group"
+          >
+            <div className="w-12 h-12 rounded-2xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400 group-hover:scale-110 transition-transform">
+              <BookOpen className="w-6 h-6 stroke-[1.5]" aria-hidden="true" />
+            </div>
+            <div>
+              <h2 className="font-bold text-xl text-white mb-2 group-hover:text-rose-300 transition-colors">Flashcards</h2>
+              <p className="text-sm text-zinc-300 line-clamp-2">Spaced repetition. Swipe to master the list.</p>
+            </div>
+          </div>
+
+          {/* Community Hardest */}
+          <div 
+            role="button"
+            tabIndex={0}
+            onClick={() => onStartGame('community', filter)}
+            onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && onStartGame('community', filter)}
+            className="md:col-span-12 glass-card p-6 min-h-[160px] cursor-pointer border border-white/10 hover:border-red-500/40 hover:bg-[#181818] hover:scale-[1.01] active:scale-[0.99] transition-all group"
+          >
+            <div className="h-full flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+              <div className="flex gap-6 items-center">
+                <div className="w-16 h-16 rounded-2xl bg-red-500/10 border border-red-500/20 flex shrink-0 items-center justify-center text-red-400 group-hover:scale-110 transition-transform">
+                  <Flame className="w-8 h-8 stroke-[1.5]" aria-hidden="true" />
                 </div>
                 <div>
-                  <h2 className="font-bold text-2xl text-white mb-2">Definition Match</h2>
-                  <p className="text-xs text-zinc-300 line-clamp-2">Master precise meanings through rapid-fire multiple choice.</p>
+                  <h2 className="font-bold text-2xl text-white mb-2 group-hover:text-red-300 transition-colors">Community Hardest</h2>
+                  <p className="text-sm text-zinc-300 max-w-md">Test yourself against the top 50 most failed words globally.</p>
                 </div>
               </div>
-            </TiltCard>
+            </div>
           </div>
 
-          <div className="stagger-card md:col-span-4 h-full" style={{ minHeight: '220px' }}>
-            <TiltCard accentColor="sky" onClick={() => onStartGame('context', filter)}>
-              <div className="p-6 h-full flex flex-col justify-between">
-                <div className="w-12 h-12 rounded-2xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-center text-sky-400">
-                  <ScrollText className="w-6 h-6 stroke-[1.5]" aria-hidden="true" />
+          {/* Review Weak Words */}
+          <div 
+            role="button"
+            tabIndex={0}
+            onClick={onShowReview}
+            onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && onShowReview()}
+            className="md:col-span-12 glass-card p-6 min-h-[180px] cursor-pointer border border-white/10 hover:border-rose-500/40 hover:bg-[#181818] hover:scale-[1.01] active:scale-[0.99] transition-all group"
+          >
+            <div className="h-full flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+              <div className="flex gap-6 items-center">
+                <div className="w-16 h-16 rounded-2xl bg-rose-500/10 border border-rose-500/20 flex shrink-0 items-center justify-center text-rose-400 group-hover:scale-110 transition-transform">
+                  <Brain className="w-8 h-8 stroke-[1.5]" aria-hidden="true" />
                 </div>
                 <div>
-                  <h2 className="font-bold text-xl text-white mb-2">Context Clues</h2>
-                  <p className="text-xs text-zinc-300 line-clamp-2">Fill in the blanks using sentence context.</p>
+                  <h2 className="font-bold text-2xl text-white mb-2 group-hover:text-rose-300 transition-colors">Review Weak Words</h2>
+                  <p className="text-sm text-zinc-300 line-clamp-2 max-w-md">Targeted spaced repetition for words you missed. Strengthen your weak points algorithmically.</p>
                 </div>
               </div>
-            </TiltCard>
-          </div>
-
-          <div className="stagger-card md:col-span-4 h-full" style={{ minHeight: '220px' }}>
-            <TiltCard accentColor="amber" onClick={() => onStartGame('speed', filter)}>
-              <div className="p-6 h-full flex flex-col justify-between">
-                <div className="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400">
-                  <Zap className="w-6 h-6 stroke-[1.5]" aria-hidden="true" />
-                </div>
-                <div>
-                  <h2 className="font-bold text-xl text-white mb-2">Speed Run</h2>
-                  <p className="text-xs text-zinc-300 line-clamp-2">Beat the clock. Tests quick recall and mastery.</p>
-                </div>
-              </div>
-            </TiltCard>
-          </div>
-
-          <div className="stagger-card md:col-span-4 h-full" style={{ minHeight: '220px' }}>
-            <TiltCard accentColor="violet" onClick={() => onStartGame('scramble', filter)}>
-              <div className="p-6 h-full flex flex-col justify-between">
-                <div className="w-12 h-12 rounded-2xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center text-violet-400">
-                  <RefreshCw className="w-6 h-6 stroke-[1.5]" aria-hidden="true" />
-                </div>
-                <div>
-                  <h2 className="font-bold text-xl text-white mb-2">Word Scramble</h2>
-                  <p className="text-xs text-zinc-300 line-clamp-2">Unscramble the letters to find the right word.</p>
-                </div>
-              </div>
-            </TiltCard>
-          </div>
-
-          <div className="stagger-card md:col-span-4 h-full" style={{ minHeight: '220px' }}>
-            <TiltCard accentColor="rose" onClick={() => onStartGame('flashcard', filter)}>
-              <div className="p-6 h-full flex flex-col justify-between">
-                <div className="w-12 h-12 rounded-2xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400">
-                  <BookOpen className="w-6 h-6 stroke-[1.5]" aria-hidden="true" />
-                </div>
-                <div>
-                  <h2 className="font-bold text-xl text-white mb-2">Flashcards</h2>
-                  <p className="text-xs text-zinc-300 line-clamp-2">Spaced repetition. Swipe to master the list.</p>
-                </div>
-              </div>
-            </TiltCard>
-          </div>
-
-          <div className="stagger-card md:col-span-12" style={{ minHeight: '160px' }}>
-            <TiltCard accentColor="red" onClick={() => onStartGame('community', filter)}>
-              <div className="p-6 h-full flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-                <div className="flex gap-6 items-center">
-                  <div className="w-16 h-16 rounded-2xl bg-red-500/10 border border-red-500/20 flex shrink-0 items-center justify-center text-red-400">
-                    <Flame className="w-8 h-8 stroke-[1.5]" aria-hidden="true" />
-                  </div>
-                  <div>
-                    <h2 className="font-bold text-2xl text-white mb-2">Community Hardest</h2>
-                    <p className="text-sm text-zinc-300 max-w-md">Test yourself against the top 50 most failed words globally.</p>
-                  </div>
-                </div>
-              </div>
-            </TiltCard>
-          </div>
-
-          <div className="stagger-card md:col-span-12" style={{ minHeight: '200px' }}>
-            <TiltCard accentColor="red" onClick={onShowReview}>
-              <div className="p-6 h-full flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-                <div className="flex gap-6 items-center">
-                  <div className="w-16 h-16 rounded-2xl bg-red-500/10 border border-red-500/20 flex shrink-0 items-center justify-center text-red-400">
-                    <Brain className="w-8 h-8 stroke-[1.5]" aria-hidden="true" />
-                  </div>
-                  <div>
-                    <h2 className="font-bold text-2xl text-white mb-2">Review Weak Words</h2>
-                    <p className="text-sm text-zinc-300 line-clamp-2 max-w-md">Targeted spaced repetition for words you missed. Strengthen your weak points algorithmically.</p>
-                  </div>
-                </div>
-              </div>
-            </TiltCard>
+            </div>
           </div>
 
         </div>
       </div>
 
-      <AnimatePresence>
-        {showSyncModal && (
-          <motion.div 
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
-          >
-            <motion.div 
-              initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }}
-              className="bg-[#141414] border border-white/10 rounded-2xl p-8 max-w-md w-full shadow-2xl relative"
+      {/* Sync Modal */}
+      {showSyncModal && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm screen-fade"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="sync-modal-title"
+        >
+          <div className="bg-[#141414] border border-white/10 rounded-2xl p-8 max-w-md w-full shadow-2xl relative">
+            <button 
+              onClick={() => setShowSyncModal(false)} 
+              className="absolute top-4 right-4 text-zinc-400 hover:text-white p-1"
+              aria-label="Close modal"
             >
-              <button onClick={() => setShowSyncModal(false)} className="absolute top-4 right-4 text-zinc-400 hover:text-white">&times;</button>
-              
-              <h2 className="text-2xl font-bold text-white mb-2">Link Devices</h2>
-              <p className="text-zinc-400 text-sm mb-8">Play seamlessly across your phone and computer without making an account.</p>
+              <X className="w-5 h-5" />
+            </button>
+            
+            <h2 id="sync-modal-title" className="text-2xl font-bold text-white mb-2">Link Devices</h2>
+            <p className="text-zinc-300 text-sm mb-8">Play seamlessly across your phone and computer without making an account.</p>
 
-              <div className="space-y-6">
-                <div className="bg-white/5 border border-white/10 rounded-xl p-4">
-                  <h2 className="text-sm font-bold text-emerald-400 mb-2">Step 1: Generate Code</h2>
-                  <p className="text-xs text-zinc-400 mb-4">Click below to generate a sync code on your main device.</p>
-                  {generatedCode ? (
-                    <div className="text-center py-3 bg-black/40 rounded-lg text-3xl font-mono tracking-[0.5em] font-bold text-white">
-                      {generatedCode}
-                    </div>
-                  ) : (
-                    <Button variant="secondary" className="w-full text-sm" onClick={handleGenerateSync}>Generate Sync Code</Button>
-                  )}
-                </div>
-
-                <div className="text-center text-zinc-400 text-xs font-bold uppercase">OR</div>
-
-                <div className="bg-white/5 border border-white/10 rounded-xl p-4">
-                  <h2 className="text-sm font-bold text-indigo-400 mb-2">Step 2: Enter Code</h2>
-                  <p className="text-xs text-zinc-400 mb-4">Enter a code from your other device to link this one to it.</p>
-                  <div className="flex gap-2">
-                    <input 
-                      type="text" 
-                      placeholder="123456"
-                      maxLength={6}
-                      value={syncCode}
-                      onChange={(e) => setSyncCode(e.target.value.replace(/[^0-9]/g, ''))}
-                      className="w-full bg-black/40 border border-white/10 rounded-lg px-4 font-mono tracking-widest text-center focus:outline-none focus:border-indigo-500 text-white"
-                    />
-                    <Button variant="primary" onClick={handleConsumeSync} disabled={syncCode.length !== 6}>Link</Button>
+            <div className="space-y-6">
+              <div className="bg-white/5 border border-white/10 rounded-xl p-4">
+                <h3 className="text-sm font-bold text-emerald-400 mb-2">Step 1: Generate Code</h3>
+                <p className="text-xs text-zinc-300 mb-4">Click below to generate a sync code on your main device.</p>
+                {generatedCode ? (
+                  <div className="text-center py-3 bg-black/40 rounded-lg text-3xl font-mono tracking-[0.5em] font-bold text-white">
+                    {generatedCode}
                   </div>
-                  {syncError && <p className="text-xs text-rose-500 mt-2">{syncError}</p>}
-                </div>
+                ) : (
+                  <Button variant="secondary" className="w-full text-sm" onClick={handleGenerateSync}>Generate Sync Code</Button>
+                )}
               </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+
+              <div className="text-center text-zinc-400 text-xs font-bold uppercase">OR</div>
+
+              <div className="bg-white/5 border border-white/10 rounded-xl p-4">
+                <h3 className="text-sm font-bold text-indigo-400 mb-2">Step 2: Enter Code</h3>
+                <p className="text-xs text-zinc-300 mb-4">Enter a code from your other device to link this one to it.</p>
+                <div className="flex gap-2">
+                  <input 
+                    type="text" 
+                    placeholder="123456"
+                    maxLength={6}
+                    value={syncCode}
+                    onChange={(e) => setSyncCode(e.target.value.replace(/[^0-9]/g, ''))}
+                    className="w-full bg-black/40 border border-white/10 rounded-lg px-4 font-mono tracking-widest text-center focus:outline-none focus:border-indigo-500 text-white"
+                  />
+                  <Button variant="primary" onClick={handleConsumeSync} disabled={syncCode.length !== 6}>Link</Button>
+                </div>
+                {syncError && <p className="text-xs text-rose-400 mt-2">{syncError}</p>}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

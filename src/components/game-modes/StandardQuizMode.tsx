@@ -1,7 +1,7 @@
 import React from 'react';
-import { motion } from 'framer-motion';
 import { Card } from '../ui/Card';
-import { Button, cn } from '../ui/Button';
+import { Button } from '../ui/Button';
+import { cn } from '../../lib/utils';
 import type { Word } from '../../data/words';
 
 interface StandardQuizModeProps {
@@ -22,7 +22,7 @@ export default function StandardQuizMode({ q, mode, options, answered, selectedW
         {(mode === 'quiz' || mode === 'speed' || mode === 'daily' || mode === 'community') && (
           <>
             <h2 className="text-5xl md:text-6xl font-serif italic text-white tracking-tight mb-4 text-center">{q.word}</h2>
-            <span className="text-zinc-400 uppercase tracking-widest text-xs font-bold bg-white/5 px-3 py-1 rounded-full">{q.pos}</span>
+            <span className="text-zinc-300 uppercase tracking-widest text-xs font-bold bg-white/5 px-3 py-1 rounded-full">{q.pos}</span>
           </>
         )}
         
@@ -58,14 +58,14 @@ export default function StandardQuizMode({ q, mode, options, answered, selectedW
           }
 
           return (
-            <motion.button
+            <button
               key={i}
+              type="button"
               disabled={answered}
-              onClick={(e: any) => onAnswerQuiz(opt.word, e)}
-              whileHover={!answered ? { scale: 1.01, x: 4 } : {}}
-              whileTap={!answered ? { scale: 0.98 } : {}}
+              onClick={(e) => onAnswerQuiz(opt.word, e)}
               className={cn(
-                "w-full glass-card rounded-xl p-5 text-left text-base font-medium text-zinc-300 transition-all duration-300 ease-out hover:border-indigo-500/30 hover:bg-[#1a1a1a]",
+                "w-full glass-card rounded-xl p-5 text-left text-base font-medium text-zinc-200 transition-all duration-200 ease-out cursor-pointer",
+                !answered && "hover:border-indigo-500/30 hover:bg-[#1a1a1a] hover:scale-[1.01] hover:translate-x-1 active:scale-[0.98]",
                 stateClass
               )}
             >
@@ -73,31 +73,23 @@ export default function StandardQuizMode({ q, mode, options, answered, selectedW
                 <div className="flex flex-col">
                   <span className="font-bold">{opt.word}</span>
                   {answered && (
-                    <motion.span 
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: 'auto' }}
-                      className="text-sm text-zinc-400 mt-2 italic font-serif leading-relaxed"
-                    >
+                    <span className="text-sm text-zinc-300 mt-2 italic font-serif leading-relaxed screen-fade">
                       {opt.def}
-                    </motion.span>
+                    </span>
                   )}
                 </div>
               )}
-            </motion.button>
+            </button>
           );
         })}
       </div>
       
       {answered && mode === 'context' && (
-        <motion.div 
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mt-8 flex justify-center w-full"
-        >
+        <div className="mt-8 flex justify-center w-full screen-fade">
           <Button variant="primary" size="lg" onClick={nextQuestion} className="w-full max-w-xs rounded-xl py-4 shadow-[0_0_20px_rgba(79,70,229,0.2)]">
             Next Question
           </Button>
-        </motion.div>
+        </div>
       )}
     </>
   );

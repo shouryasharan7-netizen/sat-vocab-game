@@ -1,7 +1,6 @@
 import React from 'react';
-import { motion } from 'framer-motion';
 import { Card } from '../ui/Card';
-import { cn } from '../ui/Button';
+import { cn } from '../../lib/utils';
 import type { Word } from '../../data/words';
 
 interface ContrastModeProps {
@@ -19,9 +18,9 @@ export default function ContrastMode({ q, contrastTarget, contrastOptions, answe
         <div className="text-xs text-zinc-400 uppercase tracking-widest font-bold mb-8">
           Contrast Match
         </div>
-        <div className="text-xl text-zinc-400 mb-4 font-medium">Find the <span className={cn("font-black", contrastTarget === 'synonym' ? "text-cyan-400" : "text-amber-400")}>{contrastTarget.toUpperCase()}</span> for</div>
+        <div className="text-xl text-zinc-300 mb-4 font-medium">Find the <span className={cn("font-black", contrastTarget === 'synonym' ? "text-cyan-400" : "text-amber-400")}>{contrastTarget.toUpperCase()}</span> for</div>
         <h2 className="text-5xl font-serif italic text-white tracking-tight mb-6 text-center">{q.word}</h2>
-        <div className="text-base text-zinc-400 max-w-sm text-center">{q.def}</div>
+        <div className="text-base text-zinc-300 max-w-sm text-center">{q.def}</div>
       </Card>
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-2xl mx-auto">
@@ -36,19 +35,19 @@ export default function ContrastMode({ q, contrastTarget, contrastOptions, answe
           }
 
           return (
-            <motion.button
+            <button
               key={i}
+              type="button"
               disabled={answered}
-              onClick={(e: any) => onContrastSubmit(opt.isCorrect, e)}
-              whileHover={!answered ? { scale: 1.02, y: -2 } : {}}
-              whileTap={!answered ? { scale: 0.98 } : {}}
+              onClick={(e) => onContrastSubmit(opt.isCorrect, e)}
               className={cn(
-                "w-full glass-card rounded-2xl p-8 text-center text-xl font-bold transition-all duration-300 ease-out flex items-center justify-center min-h-[140px]",
+                "w-full glass-card rounded-2xl p-8 text-center text-xl font-bold transition-all duration-200 ease-out flex items-center justify-center min-h-[140px] cursor-pointer",
+                !answered && "hover:scale-[1.02] hover:-translate-y-1 active:scale-[0.98]",
                 stateClass
               )}
             >
               {opt.text}
-            </motion.button>
+            </button>
           );
         })}
       </div>

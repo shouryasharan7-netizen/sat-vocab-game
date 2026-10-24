@@ -1,8 +1,8 @@
-import { motion } from 'framer-motion';
 import { useGameStore } from '../../store/useGameStore';
 import { WORDS } from '../../data/words';
 import { Card } from '../ui/Card';
-import { Button, cn } from '../ui/Button';
+import { Button } from '../ui/Button';
+import { cn } from '../../lib/utils';
 import { ArrowLeft, BrainCircuit, Info, Clock, AlertCircle } from 'lucide-react';
 
 export function ReviewScreen({ onBack }: { onBack: () => void }) {
@@ -31,13 +31,7 @@ export function ReviewScreen({ onBack }: { onBack: () => void }) {
     .slice(0, 20);
 
   return (
-    <motion.div 
-      initial={{ opacity: 0, scale: 0.98, filter: "blur(10px)" }}
-      animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
-      exit={{ opacity: 0, scale: 0.98, filter: "blur(10px)" }}
-      transition={{ type: "spring", stiffness: 350, damping: 25, mass: 0.5 }}
-      className="max-w-3xl mx-auto w-full px-4 py-8 relative z-10 min-h-screen"
-    >
+    <div className="max-w-3xl mx-auto w-full px-4 py-8 relative z-10 min-h-screen screen-fade">
       <div className="flex justify-between items-center mb-10">
         <Button variant="secondary" size="sm" onClick={onBack} className="gap-2 glass-pill text-zinc-300 hover:text-white">
           <ArrowLeft className="w-4 h-4" /> Back to Home
@@ -53,7 +47,7 @@ export function ReviewScreen({ onBack }: { onBack: () => void }) {
             <span className="text-4xl">✨</span>
           </div>
           <h2 className="text-2xl font-bold text-white mb-2">You're all caught up!</h2>
-          <p className="text-zinc-400 max-w-sm font-medium">No words are due for review right now. Keep playing other modes to discover new words.</p>
+          <p className="text-zinc-300 max-w-sm font-medium">No words are due for review right now. Keep playing other modes to discover new words.</p>
         </Card>
       ) : (
         <div className="flex flex-col gap-4">
@@ -71,7 +65,7 @@ export function ReviewScreen({ onBack }: { onBack: () => void }) {
             else if (now > dueTime) srsStatus = 'due';
 
             return (
-              <motion.div whileHover={{ scale: 1.01 }} key={w}>
+              <div key={w} className="transition-all hover:scale-[1.01]">
                 <Card className={cn(
                   "p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 transition-all shadow-sm glass-card relative overflow-hidden",
                   srsStatus === 'overdue' && "border-rose-500/30 bg-rose-500/5 shadow-[0_0_15px_rgba(244,63,94,0.1)]",
@@ -94,6 +88,7 @@ export function ReviewScreen({ onBack }: { onBack: () => void }) {
                         }}
                         className="p-1 rounded-full hover:bg-white/10 text-zinc-400 hover:text-white transition-colors"
                         title="View Details"
+                        aria-label="View word details"
                       >
                         <Info className="w-5 h-5" />
                       </button>
@@ -110,12 +105,12 @@ export function ReviewScreen({ onBack }: { onBack: () => void }) {
                       )}
                       
                       {ratio < 0.6 && srsStatus === 'upcoming' && (
-                        <span className="text-[10px] font-bold uppercase tracking-widest bg-zinc-800 text-zinc-300 px-2 py-1 rounded-md border border-zinc-700">
+                        <span className="text-[10px] font-bold uppercase tracking-widest bg-zinc-800 text-zinc-200 px-2 py-1 rounded-md border border-zinc-700">
                           Weak
                         </span>
                       )}
                     </div>
-                    <div className="text-sm text-zinc-400 leading-relaxed font-medium">{wordObj?.def}</div>
+                    <div className="text-sm text-zinc-300 leading-relaxed font-medium">{wordObj?.def}</div>
                   </div>
 
                   <div className="flex items-center gap-4 shrink-0 relative z-10">
@@ -133,7 +128,7 @@ export function ReviewScreen({ onBack }: { onBack: () => void }) {
                               strokeDasharray="113"
                               strokeDashoffset={113 - (113 * masteryProgress) / 100}
                               className={cn(
-                                "transition-all duration-1000",
+                                "transition-all duration-700",
                                 masteryProgress >= 100 ? "text-emerald-500" : "text-violet-500"
                               )}
                             />
@@ -145,11 +140,11 @@ export function ReviewScreen({ onBack }: { onBack: () => void }) {
                     </div>
                   </div>
                 </Card>
-              </motion.div>
+              </div>
             );
           })}
         </div>
       )}
-    </motion.div>
+    </div>
   );
 }
