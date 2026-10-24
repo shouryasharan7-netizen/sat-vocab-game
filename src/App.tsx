@@ -71,6 +71,7 @@ export default function App() {
                 mode={mode || ''}
                 wrongWords={wrongWords}
                 onContinue={() => setScreen('home')}
+                onReviewWeak={() => setScreen('review')}
               />
             </div>
           )}

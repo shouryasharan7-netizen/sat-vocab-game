@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useRef, useMemo } from 'react';
 import { Card } from '../ui/Card';
 import { Button } from '../ui/Button';
 import { cn } from '../../lib/utils';
@@ -15,12 +15,25 @@ interface ScrambleModeProps {
 export default function ScrambleMode({ q, answered, scrambleInput, setScrambleInput, onScrambleSubmit }: ScrambleModeProps) {
   const scrambleInputRef = useRef<HTMLInputElement>(null);
   
+  const scrambledWord = useMemo(() => {
+    const letters = q.word.split('');
+    for (let i = letters.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [letters[i], letters[j]] = [letters[j], letters[i]];
+    }
+    // If random shuffle accidentally matches original word and length > 2, swap first two
+    if (letters.join('').toLowerCase() === q.word.toLowerCase() && letters.length > 2) {
+      [letters[0], letters[1]] = [letters[1], letters[0]];
+    }
+    return letters.join('');
+  }, [q.word]);
+  
   return (
     <>
       <Card className="flex flex-col items-center justify-center min-h-[280px] p-8 mb-8 relative overflow-hidden glass-card">
         <div className="text-xs text-zinc-400 uppercase tracking-widest font-bold mb-8">Unscramble this word</div>
         <div className="text-5xl font-mono text-white tracking-[0.25em] mb-6 text-center uppercase">
-          {q.word.split('').sort(() => Math.random() - 0.5).join('')}
+          {scrambledWord}
         </div>
         <div className="text-lg text-zinc-300 text-center font-serif italic max-w-md">{q.def}</div>
       </Card>

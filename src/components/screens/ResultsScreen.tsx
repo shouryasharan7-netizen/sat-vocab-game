@@ -3,7 +3,7 @@ import { useGameStore } from '../../store/useGameStore';
 import { ACHIEVEMENTS } from '../../data/achievements';
 import { Card } from '../ui/Card';
 import { Button } from '../ui/Button';
-import { ArrowRight, Trophy, Share2 } from 'lucide-react';
+import { ArrowRight, Trophy, Share2, BrainCircuit } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
 interface ResultsScreenProps {
@@ -12,9 +12,10 @@ interface ResultsScreenProps {
   mode: string;
   wrongWords: string[];
   onContinue: () => void;
+  onReviewWeak?: () => void;
 }
 
-export function ResultsScreen({ score, total, mode, wrongWords, onContinue }: ResultsScreenProps) {
+export function ResultsScreen({ score, total, mode, wrongWords, onContinue, onReviewWeak }: ResultsScreenProps) {
   const store = useGameStore();
   const [newAchievements, setNewAchievements] = useState<string[]>([]);
   
@@ -35,15 +36,17 @@ export function ResultsScreen({ score, total, mode, wrongWords, onContinue }: Re
 
   const pct = total > 0 ? Math.round((score / total) * 100) : 0;
   
-  let label = "Keep studying! You'll get there.";
-  if (pct >= 90) label = "Outstanding! You're a vocab master!";
-  else if (pct >= 70) label = "Great job! Keep practicing!";
-  else if (pct >= 50) label = "Good effort! Review your weak words.";
+  let label = "Good practice run! Review your missed words to lock them in.";
+  if (pct === 100) label = "Flawless run! The College Board has nothing on you.";
+  else if (pct >= 85) label = "Top tier score! Your vocabulary foundation is rock solid.";
+  else if (pct >= 70) label = "Great work! A couple tricky distractors caught you, but strong overall.";
+  else if (pct >= 50) label = "Solid effort. Spaced repetition will reinforce the ones you missed.";
+  else label = "Tough set! Don't sweat it — learning from mistakes is how retention happens.";
 
   if (mode === 'speed') {
-    if (score >= 15) label = "Lightning fast! Incredible!";
-    else if (score >= 10) label = "Speed demon! Well done!";
-    else label = "Good speed! Keep pushing!";
+    if (score >= 20) label = "Lightning fast! You crushed the clock with incredible recall.";
+    else if (score >= 12) label = "Speed demon! Great instinct and word recognition under pressure.";
+    else label = "Good pace! Rapid recognition gets much faster with practice.";
   }
 
   const xpEarned = score * (mode === 'speed' ? 5 : 10);
@@ -110,10 +113,22 @@ export function ResultsScreen({ score, total, mode, wrongWords, onContinue }: Re
 
         {wrongWords.length > 0 && (
           <div className="text-left mt-8 pt-8 border-t border-white/10">
-            <h2 className="text-sm font-bold text-zinc-400 uppercase tracking-widest mb-4">Needs Review</h2>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xs font-bold text-zinc-400 uppercase tracking-widest">
+                Needs Review ({wrongWords.length})
+              </h2>
+              {onReviewWeak && (
+                <button
+                  onClick={onReviewWeak}
+                  className="text-xs text-rose-400 hover:text-rose-300 font-semibold flex items-center gap-1 cursor-pointer"
+                >
+                  <BrainCircuit className="w-3.5 h-3.5" /> Drill These Words
+                </button>
+              )}
+            </div>
             <div className="flex flex-wrap gap-2">
               {wrongWords.map((w, i) => (
-                <span key={i} className="bg-rose-500/10 text-rose-300 px-4 py-2 rounded-lg text-sm font-medium border border-rose-500/20">
+                <span key={i} className="bg-rose-500/10 text-rose-300 px-3.5 py-1.5 rounded-lg text-sm font-medium border border-rose-500/20">
                   {w}
                 </span>
               ))}
@@ -122,12 +137,12 @@ export function ResultsScreen({ score, total, mode, wrongWords, onContinue }: Re
         )}
       </Card>
 
-      <div className="flex flex-col sm:flex-row gap-4 mt-4">
-        <Button onClick={handleShare} variant="secondary" className="w-full sm:w-1/2 text-lg h-16 rounded-2xl">
-          <Share2 className="w-5 h-5 mr-2" /> Share Score
+      <div className="flex flex-col sm:flex-row gap-3 mt-2">
+        <Button onClick={handleShare} variant="secondary" className="w-full sm:w-1/2 text-base h-14 rounded-xl">
+          <Share2 className="w-4 h-4 mr-2" /> Share Score
         </Button>
-        <Button onClick={onContinue} className="w-full sm:w-1/2 text-lg h-16 rounded-2xl shadow-[0_0_30px_rgba(79,70,229,0.2)]">
-          Continue <ArrowRight className="w-5 h-5 ml-2" />
+        <Button onClick={onContinue} className="w-full sm:w-1/2 text-base h-14 rounded-xl shadow-[0_0_24px_rgba(79,70,229,0.25)]">
+          Continue <ArrowRight className="w-4 h-4 ml-2" />
         </Button>
       </div>
     </div>

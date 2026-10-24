@@ -65,7 +65,11 @@ export function ReviewScreen({ onBack }: { onBack: () => void }) {
             else if (now > dueTime) srsStatus = 'due';
 
             return (
-              <div key={w} className="transition-all hover:scale-[1.01]">
+              <div 
+                key={w} 
+                className="transition-all hover:scale-[1.01] cursor-pointer"
+                onClick={() => store.setSelectedWordForDetail(w)}
+              >
                 <Card className={cn(
                   "p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 transition-all shadow-sm glass-card relative overflow-hidden",
                   srsStatus === 'overdue' && "border-rose-500/30 bg-rose-500/5 shadow-[0_0_15px_rgba(244,63,94,0.1)]",

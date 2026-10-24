@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Card } from '../ui/Card';
 import { Button } from '../ui/Button';
 import { cn } from '../../lib/utils';
@@ -16,6 +16,28 @@ interface StandardQuizModeProps {
 }
 
 export default function StandardQuizMode({ q, mode, options, answered, selectedWord, onAnswerQuiz, thematicTag, nextQuestion }: StandardQuizModeProps) {
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (answered) {
+        if ((e.key === 'Enter' || e.key === ' ') && mode === 'context') {
+          e.preventDefault();
+          nextQuestion();
+        }
+        return;
+      }
+      
+      if (['1', '2', '3', '4'].includes(e.key)) {
+        const idx = parseInt(e.key, 10) - 1;
+        if (options[idx]) {
+          e.preventDefault();
+          onAnswerQuiz(options[idx].word, { target: document.body } as unknown as React.MouseEvent);
+        }
+      }
+    };
+    
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [answered, options, onAnswerQuiz, mode, nextQuestion]);
   return (
     <>
       <Card className="flex flex-col items-center justify-center min-h-[280px] p-8 mb-8 relative overflow-hidden glass-card">
@@ -64,31 +86,44 @@ export default function StandardQuizMode({ q, mode, options, answered, selectedW
               disabled={answered}
               onClick={(e) => onAnswerQuiz(opt.word, e)}
               className={cn(
-                "w-full glass-card rounded-xl p-5 text-left text-base font-medium text-zinc-200 transition-all duration-200 ease-out cursor-pointer",
+                "w-full glass-card rounded-xl p-4 md:p-5 text-left text-base font-medium text-zinc-200 transition-all duration-200 ease-out cursor-pointer group flex items-start gap-3",
                 !answered && "hover:border-indigo-500/30 hover:bg-[#1a1a1a] hover:scale-[1.01] hover:translate-x-1 active:scale-[0.98]",
                 stateClass
               )}
             >
-              {mode !== 'context' ? opt.def : (
-                <div className="flex flex-col">
-                  <span className="font-bold">{opt.word}</span>
-                  {answered && (
-                    <span className="text-sm text-zinc-300 mt-2 italic font-serif leading-relaxed screen-fade">
-                      {opt.def}
-                    </span>
-                  )}
-                </div>
-              )}
+              <span className={cn(
+                "hidden sm:flex shrink-0 w-6 h-6 rounded-md items-center justify-center font-mono text-xs font-semibold transition-colors mt-0.5",
+                answered && isCorrect ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30" :
+                answered && isSelected ? "bg-rose-500/20 text-rose-300 border border-rose-500/30" :
+                "bg-white/5 border border-white/10 text-zinc-400 group-hover:text-white group-hover:border-white/20"
+              )}>
+                {i + 1}
+              </span>
+              <div className="flex-1">
+                {mode !== 'context' ? (
+                  <span>{opt.def}</span>
+                ) : (
+                  <div className="flex flex-col">
+                    <span className="font-bold text-white group-hover:text-indigo-300 transition-colors">{opt.word}</span>
+                    {answered && (
+                      <span className="text-sm text-zinc-300 mt-2 italic font-serif leading-relaxed screen-fade">
+                        {opt.def}
+                      </span>
+                    )}
+                  </div>
+                )}
+              </div>
             </button>
           );
         })}
       </div>
       
       {answered && mode === 'context' && (
-        <div className="mt-8 flex justify-center w-full screen-fade">
+        <div className="mt-8 flex flex-col items-center gap-2 w-full screen-fade">
           <Button variant="primary" size="lg" onClick={nextQuestion} className="w-full max-w-xs rounded-xl py-4 shadow-[0_0_20px_rgba(79,70,229,0.2)]">
             Next Question
           </Button>
+          <span className="text-xs text-zinc-500">Press <kbd className="px-1.5 py-0.5 rounded bg-white/10 font-mono text-[10px]">Enter</kbd> or <kbd className="px-1.5 py-0.5 rounded bg-white/10 font-mono text-[10px]">Space</kbd></span>
         </div>
       )}
     </>

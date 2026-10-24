@@ -1,7 +1,7 @@
 // Procedural sound effects using Web Audio API (no audio files needed)
 
 let audioCtx: AudioContext | null = null;
-let isMuted = false;
+let isMuted = typeof window !== 'undefined' ? localStorage.getItem('sat_vocab_muted') === 'true' : false;
 
 function getContext(): AudioContext | null {
   if (typeof window === 'undefined') return null;
@@ -19,6 +19,13 @@ function getContext(): AudioContext | null {
 
 export function toggleMute(): boolean {
   isMuted = !isMuted;
+  if (typeof window !== 'undefined') {
+    try {
+      localStorage.setItem('sat_vocab_muted', String(isMuted));
+    } catch {
+      // Ignore storage errors in private/sandboxed modes
+    }
+  }
   return isMuted;
 }
 

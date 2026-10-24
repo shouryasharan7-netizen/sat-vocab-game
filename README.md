@@ -1,109 +1,101 @@
 # SAT Vocab Quest 🚀
 
-A fast, no-nonsense web game I built to help myself (and anyone else suffering through the Digital SAT) actually memorize vocabulary without falling asleep.
+A fast, lightweight, and actually fun web game I built to help myself and other high schoolers study for the Digital SAT reading and writing section without falling asleep or getting paywalled.
 
 Built for **Hack Club Stardance**.
 
-- **Live Site**: [satvocab.xyz](https://satvocab.xyz)
-- **Offline / PWA**: Installable on iOS/Android or desktop directly from your browser.
+- **Play in browser**: [satvocab.xyz](https://satvocab.xyz)
+- **Offline / PWA**: Installable directly on your phone or Chromebook with full offline support.
+- **Cost**: 100% free forever. No accounts, no paywalls, zero ads, zero tracking.
 
 ---
 
 ## Why I Built This
 
-I was studying for the Digital SAT reading and writing section, and every vocab tool I found was either:
-1. Locked behind a $35/year subscription (looking at you, Quizlet Plus).
-2. Clunky and boring — flipping plain text cards where you just look at the word, nod, flip it, pretend you knew it, and move on.
+When studying for the Digital SAT, I ran into two big problems:
 
-The real Digital SAT doesn't just ask for a dictionary definition. It throws high-difficulty words like *aberration*, *sycophant*, or *pragmatic* into dense science or history paragraphs. If you only memorize words in isolation, you freeze up during the test.
+1. **Every popular tool wanted money.** Quizlet locked spaced repetition and practice tests behind a $36/year subscription.
+2. **Flashcards don't reflect the test.** The Digital SAT rarely asks you for a straight dictionary definition. Instead, it tests words *in context*—dropping words like *equivocal*, *pragmatic*, *disparate*, and *ephemeral* into dense science, history, or humanities passages. If you only memorize words in isolation, you get tricked by deceptive distractors.
 
-I wanted something that felt like an arcade game, ran super fast on my phone during bus rides, worked completely offline, and had real spaced repetition built in so I wouldn't waste time reviewing words I already mastered.
+I wanted a game that:
+- Felt tactile and responsive like an arcade game.
+- Supported fast keyboard navigation (`1-4` for multiple choice, `Space` and arrows for flashcards).
+- Synthesized its own sound effects procedurally with the Web Audio API so it doesn't download 50MB of audio files.
+- Implemented real spaced repetition (Leitner 6-box system) so you focus on words you actually struggle with.
+- Worked completely offline on the bus ride to school.
 
 ---
 
 ## Game Modes
 
-- **Definition Match**: Rapid-fire multiple choice. The distractors are chosen to be close enough that you actually have to read carefully.
-- **Context Clues**: Fill-in-the-blank sentences styled like real Digital SAT reading passages (science, history, literature, economics).
-- **Speed Run**: 60 seconds on the clock. Score as many points as you can to build quick recognition under pressure.
-- **Word Scramble**: Unscramble the letters against the clock. Really good for locking down spelling and root structures.
-- **Flashcards**: Quick-flip 3D cards with "Got It" and "Need Review" buttons that plug straight into the Leitner scheduler.
-- **Smart Review**: A filtered deck showing only the words you've missed or that are due for review based on your Leitner intervals.
-- **Community Hardest**: Pulls the top 50 most frequently missed words from players globally.
+| Mode | What it does | Best for |
+|:---|:---|:---|
+| **Definition Match** | 4-choice rapid fire quiz with tricky distractor definitions. Supports keys `[1]`, `[2]`, `[3]`, `[4]`. | Fast recognition & drill |
+| **Context Clues** | Fill-in-the-blank sentences styled after authentic College Board reading passages. | Real test readiness |
+| **Speed Run** | 60-second adrenaline sprint. Tests instinctive word recall under time pressure. | Breaking test anxiety |
+| **Word Scramble** | Unscramble letters against the clock. | Locking down prefixes & roots |
+| **Flashcards** | 3D card flips with Leitner intervals. Press `Space` to flip, `←` / `→` to grade. | Self-paced memorization |
+| **Community Hardest** | Dynamically serves the top 50 most failed words across all players. | Beating the test curve |
+| **Smart Review** | Your personal hit list of overdue words or words with low accuracy. | Targeted retention |
 
 ---
 
-## How the Spaced Repetition Works
+## The Leitner Spaced Repetition Engine
 
-The game uses a classic **Leitner 6-Box System** (`src/lib/srs.ts`):
-
-| Box | Review Interval | Status |
-|:---:|:---|:---|
-| **0** | Today / Immediate | New or recently missed |
-| **1** | 1 day | Learning |
-| **2** | 3 days | Review |
-| **3** | 7 days | Retaining |
-| **4** | 14 days | Strong |
-| **5** | 30 days | Mastered ✨ |
-
-- When you get a word **right**, it advances up one box.
-- When you get a word **wrong**, it immediately resets to Box 0 so you review it again.
-- Once a word hits Box 5, you earn the "Mastered" trophy and confetti burst.
-
-All progress saves directly to your browser's `localStorage` instantly. If you switch between your phone and laptop, you can generate a 6-digit sync code in the app to mirror your save without creating an account.
-
----
-
-## Tech Stack & Architecture
-
-I wanted this project to be as clean, lightweight, and dependency-free as possible. No heavy bloated libraries:
-
-- **Frontend**: React 19 + TypeScript + Vite.
-- **Styling**: Tailwind CSS v4. All animations (screen transitions, card flips, button taps) use native CSS transitions and keyframes instead of heavy animation bundles.
-- **Audio**: Web Audio API (`src/lib/sound.ts`). All sound effects (correct chimes, error buzzers, streak fanfares) are procedurally synthesized using audio oscillators and gain envelopes. Zero audio files or MP3 downloads.
-- **State**: Zustand with localStorage persistence.
-- **Backend (Optional / Serverless)**:
-  - Vercel Serverless Functions (`api/`)
-  - Upstash Redis for the global leaderboard, anti-cheat XP validation, and device sync.
-  - The app works 100% offline even without the backend.
-- **Bundle Weight**: ~230 KB total gzipped. Runs smoothly on any low-end school Chromebook or mobile device.
-
----
-
-## Project Structure
+The spaced repetition system (`src/lib/srs.ts`) uses a 6-box Leitner model. Words move up when you answer correctly and drop back to Box 0 whenever you miss:
 
 ```text
-sat-vocab-game/
-├── api/                  # Serverless routes for leaderboard, sync & anti-cheat
-├── public/               # PWA icons, manifest & soundless static assets
-├── src/
-│   ├── components/
-│   │   ├── game-modes/   # Quiz, Flashcard, Scramble, Contrast modes
-│   │   ├── screens/      # HomeScreen, GameScreen, ResultsScreen, ReviewScreen, LeaderboardScreen
-│   │   └── ui/           # Buttons, Cards, Modals, Particle Canvas
-│   ├── data/             # 1,000+ curated SAT vocabulary words with context sentences
-│   ├── hooks/            # useGameLoop (turn timer and round timing)
-│   ├── lib/
-│   │   ├── api.ts        # Cloud sync client
-│   │   ├── sound.ts      # Procedural Web Audio API sound engine
-│   │   ├── srs.ts        # Leitner box spaced repetition calculation
-│   │   └── utils.ts      # Clean cn() class merger
-│   ├── types/            # TypeScript contracts for words, cards & game state
-│   ├── App.tsx           # Screen routing & modal coordination
-│   ├── main.tsx          # Root mount & PWA service worker registration
-│   └── index.css         # Tailwind directives, theme variables & CSS keyframes
-├── package.json
-└── vite.config.ts
+       ┌──────────┐  Correct  ┌──────────┐  Correct  ┌──────────┐
+New ──>│  Box 0   ├──────────>│  Box 1   ├──────────>│  Box 2   ├── ... ──> [Box 5: Mastered ✨]
+       │ Immediate│           │  1 Day   │           │  3 Days  │
+       └─────┬────┘           └────┬─────┘           └────┬─────┘
+             ▲                     │                      │
+             └────── Missed ───────┴────── Missed ────────┘
 ```
+
+| Box | Review Interval | Learning Stage |
+|:---:|:---|:---|
+| **0** | Today / Immediate | New word or recently missed |
+| **1** | 1 day | Early learning |
+| **2** | 3 days | Short-term memory |
+| **3** | 7 days | Consolidation |
+| **4** | 14 days | Long-term memory |
+| **5** | 30 days | Mastered ✨ |
+
+All progress is saved immediately to your browser's `localStorage`. You can also generate a temporary 6-digit sync code in the app to copy your save between your phone and laptop without registering an account.
 
 ---
 
-## Running Locally
+## Audio Architecture (Zero Audio Files)
+
+Instead of shipping bulky MP3 or WAV files, the audio engine (`src/lib/sound.ts`) synthesizes all sounds on the fly using the browser's native **Web Audio API**:
+
+- **Correct Chime**: A dual-tone sine wave arpeggio (587.33 Hz $\to$ 880 Hz) with an exponential gain falloff.
+- **Error Buzzer**: A 140 Hz downward ramped triangle wave.
+- **Streak Fanfare**: A 3-note ascending chord arpeggio (C5 $\to$ E5 $\to$ G5) triggered at 5+ streaks.
+- **Mute Toggle**: A tactile button in the header that persists your audio preference in `localStorage`.
+
+Total audio asset weight: **0 KB**.
+
+---
+
+## Tech Stack & Design Philosophy
+
+- **Framework**: React 19 + TypeScript + Vite.
+- **Styling**: Tailwind CSS v4. Clean custom CSS keyframes for card flips and screen transitions instead of heavy animation bundles.
+- **Icons**: Lucide React.
+- **State**: Zustand with local storage persistence.
+- **Backend (Optional)**: Vercel Serverless Functions + Upstash Redis for global leaderboards and multi-device sync codes. (The entire game is 100% playable offline without the backend).
+- **Bundle Size**: Under 250 KB total gzipped. Runs smoothly on any school Chromebook.
+
+---
+
+## Getting Started Locally
 
 Requirements: Node.js 18+
 
 ```bash
-# 1. Clone the repo
+# 1. Clone the repository
 git clone https://github.com/shouryasharan7-netizen/sat-vocab-game.git
 cd sat-vocab-game
 
@@ -114,35 +106,42 @@ npm install
 npm run dev
 ```
 
-Open [http://localhost:5173](http://localhost:5173) in your browser.
+Visit `http://localhost:5173` in your browser.
 
-To test the production build:
+To check code health and run a production build:
 ```bash
-npm run build
-npm run preview
+npm run lint      # oxlint checks
+npm run build     # TypeScript typecheck + Vite production bundle
+npm run preview   # Preview the production build locally
 ```
 
 ---
 
-## Adding More Words
+## Contributing Words & Roots
 
-Words live in `src/data/words.ts`. Each entry follows this format:
+Want to add words from your own practice tests or improve sentence examples?
+
+The vocabulary list lives in `src/data/words.ts`. Each entry follows this TypeScript schema:
 
 ```typescript
 {
-  word: "capricious",
-  def: "given to sudden and unaccountable changes of mood or behavior; fickle",
-  ex: "The capricious weather ruined our plans for an outdoor graduation.",
+  word: "ephemeral",
   pos: "adjective",
-  synonyms: ["fickle", "volatile", "unpredictable"],
-  antonyms: ["stable", "constant"]
+  def: "lasting for a very short time; fleeting",
+  ex: "The ephemeral beauty of cherry blossoms draws millions of visitors every spring.",
+  synonyms: ["fleeting", "transient", "evanescent"],
+  antonyms: ["permanent", "eternal", "enduring"],
+  roots: [
+    { root: "epi-", meaning: "upon / for" },
+    { root: "hemera", meaning: "day" }
+  ]
 }
 ```
 
-If you spot a typo or want to submit extra words or etymology roots, feel free to open a PR!
+Pull requests and typo fixes are welcome!
 
 ---
 
 ## License
 
-MIT License. Free to use, fork, study, or adapt for other exams (GRE, ACT, TOEFL).
+MIT License. Free to use, fork, study, and adapt.
